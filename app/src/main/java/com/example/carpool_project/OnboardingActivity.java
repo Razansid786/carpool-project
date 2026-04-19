@@ -52,7 +52,8 @@ public class OnboardingActivity extends AppCompatActivity {
 
         btnGetStarted.setOnClickListener(v -> {
             markOnboardingFinished();
-            startActivity(new Intent(OnboardingActivity.this, MainActivity.class));
+            // Show Login screen instead of Main screen
+            startActivity(new Intent(OnboardingActivity.this, LoginActivity.class));
             finish();
         });
     }

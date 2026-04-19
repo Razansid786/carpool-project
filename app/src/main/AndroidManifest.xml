@@ -22,6 +22,9 @@
         </activity>
 
         <activity android:name=".OnboardingActivity" />
+        <activity android:name=".SignupActivity" />
+        <activity android:name=".LoginActivity" />
+        <activity android:name=".VerifyOtpActivity" />
 
         <activity
             android:name=".MainActivity"

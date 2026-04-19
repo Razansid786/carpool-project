@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1065038456555",
+    "project_id": "shared-ride-111f9",
+    "storage_bucket": "shared-ride-111f9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1065038456555:android:514114ae87da5879edc0ae",
+        "android_client_info": {
+          "package_name": "com.example.carpool_project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBzQDzERYt_bgf60pGegUWaBTiq5vIM2DQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
