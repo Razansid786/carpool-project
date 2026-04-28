@@ -13,6 +13,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class LoginActivity extends AppCompatActivity {
@@ -38,7 +39,9 @@ public class LoginActivity extends AppCompatActivity {
 
         // Start Car Animation
         Animation carAnim = AnimationUtils.loadAnimation(this, R.anim.car_animation);
-        ivAnimatedCar.startAnimation(carAnim);
+        if (ivAnimatedCar != null) {
+            ivAnimatedCar.startAnimation(carAnim);
+        }
 
         btnLogin.setOnClickListener(v -> handleLogin());
 
@@ -62,8 +65,14 @@ public class LoginActivity extends AppCompatActivity {
                         startActivity(new Intent(LoginActivity.this, MainActivity.class));
                         finish();
                     } else {
-                        Toast.makeText(LoginActivity.this, "Login failed: " + task.getException().getMessage(),
-                                Toast.LENGTH_SHORT).show();
+                        String message = "Login failed: " + task.getException().getMessage();
+                        
+                        // Check if it is specifically a network error
+                        if (task.getException() instanceof FirebaseNetworkException) {
+                            message = "Network error. Please check your internet connection and try again.";
+                        }
+                        
+                        Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();
                     }
                 });
     }

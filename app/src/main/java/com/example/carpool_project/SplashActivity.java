@@ -3,51 +3,42 @@ package com.example.carpool_project;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.widget.ImageView;
-
+import android.os.Looper;
+import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Using a simple layout to avoid any animation issues causing a black screen
         setContentView(R.layout.activity_splash);
 
-        ImageView carImage = findViewById(R.id.car_image);
-
-        if (carImage != null) {
-            // Initial position: off-screen to the left
-            carImage.setTranslationX(-1000f);
-
-            // Slide in animation
-            carImage.animate()
-                    .translationX(0f)
-                    .setDuration(1000)
-                    .setInterpolator(new DecelerateInterpolator())
-                    .withEndAction(() -> {
-                        // Wait for 1 second in the center
-                        new Handler().postDelayed(() -> {
-                            // Slide out to the right
-                            carImage.animate()
-                                    .translationX(1000f)
-                                    .setDuration(1000)
-                                    .setInterpolator(new AccelerateInterpolator())
-                                    .withEndAction(this::navigateToNext)
-                                    .start();
-                        }, 1000);
-                    })
-                    .start();
-        } else {
-            // Fallback if view is missing
-            new Handler().postDelayed(this::navigateToNext, 2000);
-        }
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (!isFinishing()) {
+                checkNavigation();
+            }
+        }, 1500);
     }
 
-    private void navigateToNext() {
-        startActivity(new Intent(SplashActivity.this, OnboardingActivity.class));
-        finish();
+    private void checkNavigation() {
+        try {
+            FirebaseAuth mAuth = FirebaseAuth.getInstance();
+            if (mAuth.getCurrentUser() != null) {
+                Log.d("Splash", "User logged in, going to MainActivity");
+                startActivity(new Intent(SplashActivity.this, MainActivity.class));
+            } else {
+                Log.d("Splash", "User not logged in, going to LoginActivity");
+                startActivity(new Intent(SplashActivity.this, LoginActivity.class));
+            }
+            finish();
+        } catch (Exception e) {
+            Log.e("Splash", "Error in navigation", e);
+            // Fallback
+            startActivity(new Intent(SplashActivity.this, LoginActivity.class));
+            finish();
+        }
     }
 }
