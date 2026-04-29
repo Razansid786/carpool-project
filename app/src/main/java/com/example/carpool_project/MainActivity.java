@@ -28,8 +28,8 @@ public class MainActivity extends AppCompatActivity {
                 selectedFragment = new DiscoverFragment();
             } else if (id == R.id.nav_post) {
                 selectedFragment = new PostRideFragment();
-            } else if (id == R.id.nav_matches) {
-                selectedFragment = new MatchesFragment();
+            } else if (id == R.id.nav_rides) {
+                selectedFragment = new RidesFragment();
             } else if (id == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
             }

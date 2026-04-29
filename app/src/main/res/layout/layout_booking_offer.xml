@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/background_dark"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Customize Your Trip"
+            android:textColor="@color/white"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Map for Pickup/Dropoff selection -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp">
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/bookingMapContainer"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:id="@+id/tvBookingInstruction"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap on map or type to select locations"
+            android:textColor="@color/primary_blue"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etPickup"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="Pickup Location"
+            android:textColor="@color/white"
+            android:textColorHint="#888888"
+            android:background="@drawable/edit_text_bg"
+            android:padding="12dp"
+            android:imeOptions="actionSearch"
+            android:inputType="textPostalAddress"
+            android:layout_marginBottom="8dp"/>
+
+        <EditText
+            android:id="@+id/etDropoff"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:hint="Drop-off Location"
+            android:textColor="@color/white"
+            android:textColorHint="#888888"
+            android:background="@drawable/edit_text_bg"
+            android:padding="12dp"
+            android:imeOptions="actionSearch"
+            android:inputType="textPostalAddress"
+            android:layout_marginBottom="16dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Seats" android:textColor="#888888" />
+                <Spinner android:id="@+id/spinnerSeats" android:layout_width="match_parent" android:layout_height="40dp" android:backgroundTint="@color/white"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.5"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp">
+                <TextView android:id="@+id/tvMinRate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Min Offer: Rs. 0" android:textColor="#888888" />
+                <EditText
+                    android:id="@+id/etOfferPrice"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:hint="Your Offer"
+                    android:inputType="numberDecimal"
+                    android:textColor="@color/white"
+                    android:backgroundTint="@color/primary_blue"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnConfirmBooking"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="Send Offer"
+            android:backgroundTint="@color/primary_blue"
+            android:textColor="@color/white"/>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

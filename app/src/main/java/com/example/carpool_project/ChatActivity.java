@@ -2,12 +2,15 @@ package com.example.carpool_project;
 
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +24,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +34,7 @@ public class ChatActivity extends AppCompatActivity {
     private RecyclerView rvChat;
     private EditText etMessage;
     private MaterialButton btnSendMessage;
+    private TextView tvChatWith;
     private String rideId, otherUserId, chatRoomId;
     private DatabaseReference chatRef;
     private List<ChatMessage> messageList;
@@ -45,15 +50,23 @@ public class ChatActivity extends AppCompatActivity {
         otherUserId = getIntent().getStringExtra("otherUserId");
         currentUserId = FirebaseAuth.getInstance().getUid();
 
+        if (rideId == null || otherUserId == null || currentUserId == null) {
+            Toast.makeText(this, "Error initializing chat", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        // Sort IDs to ensure same room for both users
         if (currentUserId.compareTo(otherUserId) < 0) {
-            chatRoomId = rideId + "_" + currentUserId + "_" + otherUserId;
+            chatRoomId = currentUserId + "_" + otherUserId;
         } else {
-            chatRoomId = rideId + "_" + otherUserId + "_" + currentUserId;
+            chatRoomId = otherUserId + "_" + currentUserId;
         }
 
         rvChat = findViewById(R.id.rvChat);
         etMessage = findViewById(R.id.etMessage);
         btnSendMessage = findViewById(R.id.btnSendMessage);
+        tvChatWith = findViewById(R.id.tvChatWith);
         ImageView btnBack = findViewById(R.id.btnChatBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -63,11 +76,33 @@ public class ChatActivity extends AppCompatActivity {
         rvChat.setLayoutManager(new LinearLayoutManager(this));
         rvChat.setAdapter(adapter);
 
-        chatRef = FirebaseDatabase.getInstance().getReference("chats").child(chatRoomId);
+        // Path: chats / rideId / chatRoomId
+        chatRef = FirebaseDatabase.getInstance().getReference("chats").child(rideId).child(chatRoomId);
 
+        loadOtherUserInfo();
         loadMessages();
 
         btnSendMessage.setOnClickListener(v -> sendMessage());
+
+        // Handle "Enter" key on keyboard to send message
+        etMessage.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEND) {
+                sendMessage();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void loadOtherUserInfo() {
+        FirebaseFirestore.getInstance().collection("users").document(otherUserId)
+                .get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String name = documentSnapshot.getString("name");
+                        if (name != null) tvChatWith.setText(name);
+                    }
+                });
     }
 
     private void loadMessages() {
@@ -77,16 +112,20 @@ public class ChatActivity extends AppCompatActivity {
                 messageList.clear();
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     ChatMessage msg = ds.getValue(ChatMessage.class);
-                    messageList.add(msg);
+                    if (msg != null) {
+                        messageList.add(msg);
+                    }
                 }
                 adapter.notifyDataSetChanged();
-                if (messageList.size() > 0) {
+                if (!messageList.isEmpty()) {
                     rvChat.scrollToPosition(messageList.size() - 1);
                 }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ChatActivity", "Database error: " + error.getMessage());
+            }
         });
     }
 
@@ -94,7 +133,9 @@ public class ChatActivity extends AppCompatActivity {
         String text = etMessage.getText().toString().trim();
         if (!TextUtils.isEmpty(text)) {
             ChatMessage msg = new ChatMessage(currentUserId, text, System.currentTimeMillis());
-            chatRef.push().setValue(msg);
+            chatRef.push().setValue(msg).addOnFailureListener(e -> {
+                Toast.makeText(ChatActivity.this, "Failed to send message", Toast.LENGTH_SHORT).show();
+            });
             etMessage.setText("");
         }
     }
@@ -103,8 +144,8 @@ public class ChatActivity extends AppCompatActivity {
 class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder> {
     private static final int TYPE_SENT = 1;
     private static final int TYPE_RECEIVED = 2;
-    private List<ChatMessage> list;
-    private String currentUserId;
+    private final List<ChatMessage> list;
+    private final String currentUserId;
 
     public ChatAdapter(List<ChatMessage> list, String currentUserId) {
         this.list = list;

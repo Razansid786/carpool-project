@@ -3,6 +3,8 @@ package com.example.carpool_project;
 import java.io.Serializable;
 
 public class Ride implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     public String rideId;
     public String driverId;
     public String driverName;

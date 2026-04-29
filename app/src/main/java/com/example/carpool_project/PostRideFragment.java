@@ -1,5 +1,6 @@
 package com.example.carpool_project;
 
+import android.app.TimePickerDialog;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -12,8 +13,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -30,20 +29,18 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
-import com.google.android.material.textfield.MaterialAutoCompleteTextView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
 public class PostRideFragment extends Fragment implements OnMapReadyCallback {
 
-    private EditText etFrom, etTo, etSeats;
-    private AutoCompleteTextView autoCompleteTime;
+    private EditText etFrom, etTo, etSeats, etTime;
     private ChipGroup chipGroupDays;
     private Button btnPostCommute;
     private FirebaseFirestore db;
@@ -53,6 +50,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     private boolean isSelectingFrom = true;
     private final Handler searchHandler = new Handler(Looper.getMainLooper());
     private TextWatcher fromTextWatcher, toTextWatcher;
+    private boolean isMapInitialized = false;
 
     @Nullable
     @Override
@@ -70,52 +68,52 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
         etFrom = view.findViewById(R.id.etFrom);
         etTo = view.findViewById(R.id.etTo);
         etSeats = view.findViewById(R.id.etSeats);
-        autoCompleteTime = view.findViewById(R.id.autoCompleteTime);
+        etTime = view.findViewById(R.id.etTime);
         chipGroupDays = view.findViewById(R.id.chipGroupDays);
         btnPostCommute = view.findViewById(R.id.btnPostCommute);
 
-        setupTimeDropdown();
-
-        SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
-                .findFragmentById(R.id.map);
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(this);
-        }
+        etTime.setOnClickListener(v -> showTimePicker());
 
         btnPostCommute.setOnClickListener(v -> handlePostRide());
 
         etFrom.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 isSelectingFrom = true;
-                Toast.makeText(getContext(), "Tap on map to select start location", Toast.LENGTH_SHORT).show();
+                ensureMapInitialized();
             }
         });
 
         etTo.setOnFocusChangeListener((v, hasFocus) -> {
             if (hasFocus) {
                 isSelectingFrom = false;
-                Toast.makeText(getContext(), "Tap on map to select destination", Toast.LENGTH_SHORT).show();
+                ensureMapInitialized();
             }
         });
 
         setupSearchListeners();
     }
 
-    private void setupTimeDropdown() {
-        List<String> times = new ArrayList<>();
-        for (int h = 0; h < 24; h++) {
-            for (int m = 0; m < 60; m += 30) {
-                String amPm = (h < 12) ? "AM" : "PM";
-                int displayHour = (h > 12) ? h - 12 : (h == 0 ? 12 : h);
-                times.add(String.format("%02d:%02d %s", displayHour, m, amPm));
+    private void showTimePicker() {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), (view, hourOfDay, minuteOfHour) -> {
+            String amPm = (hourOfDay < 12) ? "AM" : "PM";
+            int displayHour = (hourOfDay > 12) ? hourOfDay - 12 : (hourOfDay == 0 ? 12 : hourOfDay);
+            etTime.setText(String.format(Locale.getDefault(), "%02d:%02d %s", displayHour, minuteOfHour, amPm));
+        }, hour, minute, false);
+        timePickerDialog.show();
+    }
+
+    private void ensureMapInitialized() {
+        if (!isMapInitialized) {
+            SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
+                    .findFragmentById(R.id.map);
+            if (mapFragment != null) {
+                mapFragment.getMapAsync(this);
+                isMapInitialized = true;
             }
-        }
-        
-        if (autoCompleteTime instanceof MaterialAutoCompleteTextView) {
-            ((MaterialAutoCompleteTextView) autoCompleteTime).setSimpleItems(times.toArray(new String[0]));
-        } else {
-            ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_list_item_1, times);
-            autoCompleteTime.setAdapter(adapter);
         }
     }
 
@@ -136,7 +134,10 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
             public void afterTextChanged(Editable s) {
                 searchHandler.removeCallbacksAndMessages(null);
                 if (s.length() > 3) {
-                    searchHandler.postDelayed(() -> performSearch(s.toString(), isFrom), 1000);
+                    searchHandler.postDelayed(() -> {
+                        ensureMapInitialized();
+                        performSearch(s.toString(), isFrom);
+                    }, 1000);
                 }
             }
         };
@@ -178,6 +179,8 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
             }
             updateMapMarkers();
         });
+        
+        updateMapMarkers();
     }
 
     private void updateLocationText(LatLng latLng, EditText editText, TextWatcher watcher) {
@@ -226,7 +229,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
         String from = etFrom.getText().toString().trim();
         String to = etTo.getText().toString().trim();
         String seatsStr = etSeats.getText().toString().trim();
-        String selectedTime = autoCompleteTime.getText().toString();
+        String selectedTime = etTime.getText().toString();
         
         StringBuilder daysBuilder = new StringBuilder();
         List<Integer> ids = chipGroupDays.getCheckedChipIds();

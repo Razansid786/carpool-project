@@ -8,9 +8,15 @@ public class Person {
     public String name;
     public String email;
     public String role; // e.g., "Student", "Office Worker"
-    public String profileImageUrl; // URL to the image stored in Firebase Storage
+    public String profileImageUrl; 
+    
+    // New fields for security and info
+    public String workplace; // University or Office Name
+    public String workplaceId;
+    public String workplaceEmail;
+    public String workplaceAddress;
 
-    public Person() {} // Required for Firebase
+    public Person() {}
 
     public Person(String userId, String name, String email, String role, String profileImageUrl, String password, String phoneNumber) {
         this.userId = userId;

@@ -6,22 +6,18 @@
     android:background="@color/background_dark"
     android:orientation="vertical">
 
-    <!-- Filter by Days Tabs -->
     <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutDays"
+        android:id="@+id/tabLayoutRides"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabMode="scrollable"
-        app:tabTextColor="#888888"
-        app:tabSelectedTextColor="@color/primary_blue"
+        android:background="@color/background_dark"
         app:tabIndicatorColor="@color/primary_blue"
-        android:background="@color/background_dark" />
+        app:tabSelectedTextColor="@color/white"
+        app:tabTextColor="#888888" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvMyPosts"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/viewPagerRides"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:layout_height="match_parent" />
 
 </LinearLayout>

@@ -14,21 +14,28 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MyPostsFragment extends Fragment {
     private RecyclerView recyclerView;
     private RideAdapter adapter;
-    private List<Ride> myRides;
+    private List<Ride> allRides;
+    private List<Ride> filteredRides;
     private FirebaseFirestore db;
     private FirebaseAuth mAuth;
     private ListenerRegistration rideListener;
+    private TabLayout tabLayoutDays;
+    private String selectedDay = "Mon";
 
     @Nullable
     @Override
@@ -36,15 +43,39 @@ public class MyPostsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_my_posts, container, false);
         db = FirebaseFirestore.getInstance();
         mAuth = FirebaseAuth.getInstance();
+        
+        tabLayoutDays = view.findViewById(R.id.tabLayoutDays);
+        setupTabs();
+
         recyclerView = view.findViewById(R.id.rvMyPosts);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        myRides = new ArrayList<>();
         
-        adapter = new RideAdapter(myRides);
+        allRides = new ArrayList<>();
+        filteredRides = new ArrayList<>();
+        adapter = new RideAdapter(filteredRides);
         adapter.setMyPosts(true, ride -> showDeleteConfirmation(ride));
         
         recyclerView.setAdapter(adapter);
         return view;
+    }
+
+    private void setupTabs() {
+        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+        for (String day : days) {
+            tabLayoutDays.addTab(tabLayoutDays.newTab().setText(day));
+        }
+
+        tabLayoutDays.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                selectedDay = tab.getText().toString();
+                filterByDay();
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {}
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {}
+        });
     }
 
     @Override
@@ -74,18 +105,28 @@ public class MyPostsFragment extends Fragment {
                         return;
                     }
                     if (value != null) {
-                        myRides.clear();
+                        allRides.clear();
                         for (QueryDocumentSnapshot doc : value) {
                             try {
                                 Ride ride = doc.toObject(Ride.class);
-                                myRides.add(ride);
+                                allRides.add(ride);
                             } catch (Exception e) {
                                 Log.e("MyPostsFragment", "Error parsing ride", e);
                             }
                         }
-                        adapter.notifyDataSetChanged();
+                        filterByDay();
                     }
                 });
+    }
+
+    private void filterByDay() {
+        filteredRides.clear();
+        for (Ride ride : allRides) {
+            if (ride.recurringDays != null && ride.recurringDays.contains(selectedDay)) {
+                filteredRides.add(ride);
+            }
+        }
+        adapter.notifyDataSetChanged();
     }
 
     private void showDeleteConfirmation(Ride ride) {
@@ -99,9 +140,15 @@ public class MyPostsFragment extends Fragment {
     }
 
     private void deleteRide(Ride ride) {
-        db.collection("rides").document(ride.rideId)
-                .delete()
-                .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), "Ride deleted", Toast.LENGTH_SHORT).show())
-                .addOnFailureListener(e -> Toast.makeText(getContext(), "Failed to delete", Toast.LENGTH_SHORT).show());
+        db.collection("rides").document(ride.rideId).delete();
+        db.collection("offers")
+                .whereEqualTo("rideId", ride.rideId)
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                        doc.getReference().delete();
+                    }
+                });
+        Toast.makeText(getContext(), "Ride deleted", Toast.LENGTH_SHORT).show();
     }
 }
