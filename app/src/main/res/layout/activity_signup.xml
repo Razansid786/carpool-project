@@ -1,31 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background_dark">
+    android:background="@color/background_dark"
+    android:fitsSystemWindows="true">
 
-    <ImageView
-        android:id="@+id/ivAnimatedCar"
-        android:layout_width="120dp"
-        android:layout_height="60dp"
-        android:layout_gravity="bottom"
-        android:layout_marginBottom="100dp"
-        android:alpha="0.2"
-        android:src="@drawable/ic_car_2" />
-
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:id="@+id/signupScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true">
+        android:fillViewport="true"
+        android:isScrollContainer="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="32dp"
-            android:gravity="center_horizontal">
+            android:gravity="center_horizontal"
+            android:focusable="true"
+            android:focusableInTouchMode="true">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -49,6 +44,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:inputType="textPersonName"
+                android:imeOptions="actionNext"
                 android:layout_marginBottom="12dp"/>
 
             <EditText
@@ -62,6 +58,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:inputType="textEmailAddress"
+                android:imeOptions="actionNext"
                 android:layout_marginBottom="12dp"/>
 
             <EditText
@@ -75,6 +72,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:inputType="phone"
+                android:imeOptions="actionNext"
                 android:layout_marginBottom="12dp"/>
 
             <LinearLayout
@@ -93,7 +91,8 @@
                     android:textColor="@color/white"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:imeOptions="actionNext" />
                 <View android:layout_width="12dp" android:layout_height="1dp" />
                 <EditText
                     android:id="@+id/etCountry"
@@ -106,10 +105,11 @@
                     android:textColor="@color/white"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:imeOptions="actionNext" />
             </LinearLayout>
 
-            <!-- Location Details - Required for Profile -->
+            <!-- Workplace Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -130,6 +130,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:inputType="text"
+                android:imeOptions="actionNext"
                 android:layout_marginBottom="12dp"/>
 
             <LinearLayout
@@ -146,11 +147,12 @@
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:hint="Workplace Full Address"
+                    android:hint="Search Work Address"
                     android:textColorHint="#555555"
                     android:textColor="@color/white"
                     android:paddingStart="16dp"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:imeOptions="actionSearch" />
                 <ImageView
                     android:id="@+id/btnSearchWorkLocation"
                     android:layout_width="24dp"
@@ -159,11 +161,12 @@
                     app:tint="@color/primary_blue" />
             </LinearLayout>
 
+            <!-- Home Section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Residential Info"
-                android:textColor="@color/primary_vibrant"
+                android:textColor="@color/secondary_vibrant"
                 android:textSize="14sp"
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
@@ -182,11 +185,12 @@
                     android:layout_height="56dp"
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
-                    android:hint="Home Full Address"
+                    android:hint="Search Home Address"
                     android:textColorHint="#555555"
                     android:textColor="@color/white"
                     android:paddingStart="16dp"
-                    android:inputType="text" />
+                    android:inputType="text"
+                    android:imeOptions="actionSearch" />
                 <ImageView
                     android:id="@+id/btnSearchHomeLocation"
                     android:layout_width="24dp"
@@ -195,6 +199,7 @@
                     app:tint="@color/secondary_vibrant" />
             </LinearLayout>
 
+            <!-- Suggestions and Map -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvSuggestions"
                 android:layout_width="match_parent"
@@ -205,8 +210,8 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSignupMap"
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:layout_marginBottom="12dp"
+                android:layout_height="250dp"
+                android:layout_marginBottom="16dp"
                 app:cardCornerRadius="12dp"
                 app:strokeColor="#333333"
                 app:strokeWidth="1dp"
@@ -228,6 +233,7 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:inputType="textPassword"
+                android:imeOptions="actionDone"
                 android:layout_marginBottom="12dp"/>
 
             <Spinner
@@ -239,12 +245,6 @@
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:theme="@style/ThemeOverlay.AppCompat.Dark" />
-
-            <TextView
-                android:id="@+id/tvRoleLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone" />
 
             <Button
                 android:id="@+id/btnSignup"
@@ -263,8 +263,17 @@
                 android:layout_height="wrap_content"
                 android:text="Already have an account? Login"
                 android:textColor="#AAAAAA"
-                android:layout_marginBottom="40dp"/>
+                android:layout_marginBottom="20dp"/>
+
+            <ImageView
+                android:id="@+id/ivAnimatedCar"
+                android:layout_width="120dp"
+                android:layout_height="60dp"
+                android:alpha="0.2"
+                android:src="@drawable/ic_car_2"
+                android:layout_marginBottom="40dp"
+                android:layout_gravity="center_horizontal"/>
 
         </LinearLayout>
-    </ScrollView>
-</FrameLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
