@@ -83,7 +83,8 @@ public class OnboardingActivity extends AppCompatActivity {
     private void markOnboardingFinished() {
         SharedPreferences preferences = getSharedPreferences("onboarding", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("isFirstTime", true);
+        // Changed to false so it doesn't repeat after the user clicks Get Started
+        editor.putBoolean("isFirstTime", false);
         editor.apply();
     }
 }

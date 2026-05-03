@@ -15,6 +15,7 @@
         android:src="@drawable/ic_car_2" />
 
     <ScrollView
+        android:id="@+id/signupScrollView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -131,18 +132,32 @@
                 android:inputType="text"
                 android:layout_marginBottom="12dp"/>
 
-            <EditText
-                android:id="@+id/etWorkplaceAddress"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:background="@drawable/edit_text_bg"
-                android:hint="Workplace Full Address"
-                android:textColorHint="#555555"
-                android:textColor="@color/white"
-                android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:inputType="text"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="12dp">
+                <EditText
+                    android:id="@+id/etWorkplaceAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Workplace Full Address"
+                    android:textColorHint="#555555"
+                    android:textColor="@color/white"
+                    android:paddingStart="16dp"
+                    android:inputType="text" />
+                <ImageView
+                    android:id="@+id/btnSearchWorkLocation"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="@color/primary_blue" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -153,18 +168,54 @@
                 android:textStyle="bold"
                 android:layout_marginBottom="8dp"/>
 
-            <EditText
-                android:id="@+id/etHomeAddress"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
                 android:background="@drawable/edit_text_bg"
-                android:hint="Home Full Address"
-                android:textColorHint="#555555"
-                android:textColor="@color/white"
-                android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:inputType="text"
-                android:layout_marginBottom="12dp"/>
+                android:layout_marginBottom="12dp">
+                <EditText
+                    android:id="@+id/etHomeAddress"
+                    android:layout_width="0dp"
+                    android:layout_height="56dp"
+                    android:layout_weight="1"
+                    android:background="@android:color/transparent"
+                    android:hint="Home Full Address"
+                    android:textColorHint="#555555"
+                    android:textColor="@color/white"
+                    android:paddingStart="16dp"
+                    android:inputType="text" />
+                <ImageView
+                    android:id="@+id/btnSearchHomeLocation"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="@color/secondary_vibrant" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSuggestions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:visibility="gone" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardSignupMap"
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:layout_marginBottom="12dp"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="#333333"
+                app:strokeWidth="1dp"
+                android:visibility="gone">
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/signupMapView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </com.google.android.material.card.MaterialCardView>
 
             <EditText
                 android:id="@+id/etPassword"
