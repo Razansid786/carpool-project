@@ -6,7 +6,6 @@
     android:background="@color/background_dark"
     android:orientation="vertical">
 
-    <!-- Filter by Days Tabs -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutDays"
         android:layout_width="match_parent"

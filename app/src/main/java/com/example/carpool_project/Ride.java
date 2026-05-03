@@ -8,6 +8,7 @@ public class Ride implements Serializable {
     public String rideId;
     public String driverId;
     public String driverName;
+    public String driverEmail;
     public String driverImageUrl;
     public String driverPhone;
     public double driverRating;
@@ -15,20 +16,23 @@ public class Ride implements Serializable {
     public String destination;
     public double startLat, startLng;
     public double endLat, endLng;
+    public double currentLat, currentLng;
     public String time;
     public String recurringDays;
     public int seatsAvailable;
     public String status;
+    public String type; 
 
     public Ride() {}
 
-    public Ride(String rideId, String driverId, String driverName, String driverImageUrl, String driverPhone, 
+    public Ride(String rideId, String driverId, String driverName, String driverEmail, String driverImageUrl, String driverPhone, 
                 double driverRating, String origin, String destination, double startLat, double startLng,
                 double endLat, double endLng, String time, String recurringDays, 
-                int seatsAvailable, String status) {
+                int seatsAvailable, String status, String type) {
         this.rideId = rideId;
         this.driverId = driverId;
         this.driverName = driverName;
+        this.driverEmail = driverEmail;
         this.driverImageUrl = driverImageUrl;
         this.driverPhone = driverPhone;
         this.driverRating = driverRating;
@@ -42,15 +46,18 @@ public class Ride implements Serializable {
         this.recurringDays = recurringDays;
         this.seatsAvailable = seatsAvailable;
         this.status = status;
+        this.type = type;
+        this.currentLat = startLat;
+        this.currentLng = startLng;
     }
 
-    // Constructor for PostRideFragment which doesn't provide lat/lng
-    public Ride(String rideId, String driverId, String driverName, String driverImageUrl, String driverPhone, 
+    public Ride(String rideId, String driverId, String driverName, String driverEmail, String driverImageUrl, String driverPhone, 
                 double driverRating, String origin, String destination, String time, String recurringDays, 
-                int seatsAvailable, String status) {
+                int seatsAvailable, String status, String type) {
         this.rideId = rideId;
         this.driverId = driverId;
         this.driverName = driverName;
+        this.driverEmail = driverEmail;
         this.driverImageUrl = driverImageUrl;
         this.driverPhone = driverPhone;
         this.driverRating = driverRating;
@@ -60,9 +67,12 @@ public class Ride implements Serializable {
         this.recurringDays = recurringDays;
         this.seatsAvailable = seatsAvailable;
         this.status = status;
+        this.type = type;
         this.startLat = 0.0;
         this.startLng = 0.0;
         this.endLat = 0.0;
         this.endLng = 0.0;
+        this.currentLat = 0.0;
+        this.currentLng = 0.0;
     }
 }

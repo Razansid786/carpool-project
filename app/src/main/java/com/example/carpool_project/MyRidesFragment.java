@@ -44,7 +44,6 @@ public class MyRidesFragment extends Fragment {
 
     private void loadBookedRides() {
         String uid = mAuth.getCurrentUser().getUid();
-        // Listen to offers instead of bookings to show pending status
         db.collection("offers")
                 .whereEqualTo("passengerId", uid)
                 .addSnapshotListener((value, error) -> {
@@ -53,7 +52,6 @@ public class MyRidesFragment extends Fragment {
                         List<String> rideIds = new ArrayList<>();
                         for (QueryDocumentSnapshot doc : value) {
                             String status = doc.getString("status");
-                            // Show pending and accepted. Hide rejected as requested.
                             if ("pending".equals(status) || "accepted".equals(status)) {
                                 rideIds.add(doc.getString("rideId"));
                             }

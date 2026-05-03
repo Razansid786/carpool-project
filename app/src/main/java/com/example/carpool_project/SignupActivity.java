@@ -1,6 +1,7 @@
 package com.example.carpool_project;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -23,9 +24,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.UUID;
+
 public class SignupActivity extends AppCompatActivity {
 
-    private EditText etName, etEmail, etPhone, etPassword;
+    private EditText etName, etEmail, etPhone, etCity, etCountry, etPassword;
     private Spinner spinnerRole;
     private TextView tvRoleLabel;
     private Button btnSignup;
@@ -45,6 +48,8 @@ public class SignupActivity extends AppCompatActivity {
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
+        etCity = findViewById(R.id.etCity);
+        etCountry = findViewById(R.id.etCountry);
         etPassword = findViewById(R.id.etPassword);
         spinnerRole = findViewById(R.id.spinnerRole);
         tvRoleLabel = findViewById(R.id.tvRoleLabel);
@@ -52,7 +57,6 @@ public class SignupActivity extends AppCompatActivity {
         tvLogin = findViewById(R.id.tvLogin);
         ivAnimatedCar = findViewById(R.id.ivAnimatedCar);
 
-        // Setup Spinner
         String[] roles = {"Student", "Teacher"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, roles);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -71,7 +75,6 @@ public class SignupActivity extends AppCompatActivity {
             }
         });
 
-        // Start Car Animation
         Animation carAnim = AnimationUtils.loadAnimation(this, R.anim.car_animation);
         if (ivAnimatedCar != null) {
             ivAnimatedCar.startAnimation(carAnim);
@@ -89,6 +92,8 @@ public class SignupActivity extends AppCompatActivity {
         String name = etName.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
+        String city = etCity.getText().toString().trim();
+        String country = etCountry.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String role = spinnerRole.getSelectedItem().toString();
 
@@ -104,6 +109,14 @@ public class SignupActivity extends AppCompatActivity {
             etPhone.setError("Valid phone number is required");
             return;
         }
+        if (TextUtils.isEmpty(city)) {
+            etCity.setError("City is required");
+            return;
+        }
+        if (TextUtils.isEmpty(country)) {
+            etCountry.setError("Country is required");
+            return;
+        }
         if (TextUtils.isEmpty(password) || password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
             return;
@@ -114,7 +127,7 @@ public class SignupActivity extends AppCompatActivity {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            saveUserToFirestore(user.getUid(), name, email, phone, role, password);
+                            saveUserToFirestore(user.getUid(), name, email, phone, role, city, country, password);
                         }
                     } else {
                         String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
@@ -123,22 +136,52 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserToFirestore(String userId, String name, String email, String phone, String role, String password) {
-        // Create an instance of the Person class with all data
-        Person person = new Person(userId, name, email, role, "", password, phone);
+    private void saveUserToFirestore(String userId, String name, String email, String phone, String role, String city, String country, String password) {
+        Person person = new Person(userId, name, email, role, "", password, phone, city, country);
         
-        // Save the entire object to the "users" collection in Firestore
         db.collection("users").document(userId)
                 .set(person)
                 .addOnSuccessListener(aVoid -> {
                     Log.d("Firestore", "User profile saved for: " + userId);
+                    
+                    String title = "Welcome to Carpool!";
+                    String message = "Successfully signed to Carpool. Enjoy your rides!";
+
+                    sendNotificationToFirestore(userId, title, message);
+
+                    NotificationHelper.showNotification(this, title, message);
+
+                    sendWelcomeEmail(email);
+
                     Toast.makeText(SignupActivity.this, "Signup successful! Please login.", Toast.LENGTH_LONG).show();
-                    startActivity(new Intent(SignupActivity.this, LoginActivity.class));
-                    finish();
+                    
+                    new android.os.Handler().postDelayed(() -> {
+                        startActivity(new Intent(SignupActivity.this, LoginActivity.class));
+                        finish();
+                    }, 500);
                 })
                 .addOnFailureListener(e -> {
                     Log.e("Firestore", "Error saving user", e);
                     Toast.makeText(SignupActivity.this, "Error saving user data", Toast.LENGTH_SHORT).show();
                 });
+    }
+
+    private void sendNotificationToFirestore(String userId, String title, String message) {
+        String id = UUID.randomUUID().toString();
+        Notification notification = new Notification(id, userId, title, message, System.currentTimeMillis());
+        db.collection("notifications").document(id).set(notification);
+    }
+
+    private void sendWelcomeEmail(String userEmail) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:" + userEmail));
+        intent.putExtra(Intent.EXTRA_SUBJECT, "Welcome to Carpool!");
+        intent.putExtra(Intent.EXTRA_TEXT, "Hello! Successfully signed to Carpool. We are excited to have you on board!");
+        
+        try {
+            startActivity(Intent.createChooser(intent, "Send Welcome Email"));
+        } catch (android.content.ActivityNotFoundException ex) {
+            Toast.makeText(this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+        }
     }
 }

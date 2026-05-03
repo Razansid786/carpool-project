@@ -14,7 +14,7 @@ public class BookingOffer implements Serializable {
     public String pickupAddress, dropoffAddress;
     public double offeredPrice;
     public int seatsRequested;
-    public String status; // pending, accepted, rejected
+    public String status;
     public long timestamp;
 
     public BookingOffer() {}

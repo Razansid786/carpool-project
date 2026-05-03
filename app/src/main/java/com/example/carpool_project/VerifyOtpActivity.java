@@ -50,7 +50,6 @@ public class VerifyOtpActivity extends AppCompatActivity {
         btnVerify.setOnClickListener(v -> {
             String code = etOtp.getText().toString().trim();
             
-            // Data Verification Check
             if (TextUtils.isEmpty(code) || code.length() < 6) {
                 etOtp.setError("Enter 6-digit OTP");
                 return;
@@ -73,7 +72,6 @@ public class VerifyOtpActivity extends AppCompatActivity {
                 .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                     @Override
                     public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
-                        // Auto-verification
                         String code = credential.getSmsCode();
                         if (code != null) {
                             etOtp.setText(code);
@@ -123,7 +121,6 @@ public class VerifyOtpActivity extends AppCompatActivity {
                     }
                 });
         } else {
-            // If user somehow logged out, just sign in with phone (Fallback)
             mAuth.signInWithCredential(credential).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     startActivity(new Intent(VerifyOtpActivity.this, MainActivity.class));

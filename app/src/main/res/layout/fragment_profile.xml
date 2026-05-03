@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/profileScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_dark"
@@ -13,144 +14,133 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/ivProfileImage"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="20dp"
-            android:scaleType="centerCrop"
-            android:src="@drawable/ic_car_2"
-            app:shapeAppearanceOverlay="@style/CircleImage"
-            app:strokeColor="@color/primary_blue"
-            app:strokeWidth="2dp" />
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/ivProfileImage"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="10dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_car_2"
+                app:shapeAppearanceOverlay="@style/CircleImage"
+                app:strokeColor="@color/primary_blue"
+                app:strokeWidth="2dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnEditProfile"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="Edit"
+                android:textColor="@color/primary_blue" />
+        </RelativeLayout>
 
         <TextView
             android:id="@+id/tvProfileName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:text="User Name"
             android:textColor="@color/white"
-            android:textSize="22sp"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:background="@drawable/edit_text_bg"
             android:orientation="vertical"
             android:padding="16dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="University / Office Name"
-                android:textColor="#555555"
-                android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/etWorkplace"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:hint="Enter Name"
-                android:textColor="@color/white"
-                android:textColorHint="#333333"
-                android:textSize="16sp" />
+                android:orientation="horizontal">
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="City" android:textColor="#555555" android:textSize="11sp" />
+                    <EditText android:id="@+id/etCity" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="City" android:textColor="@color/white" android:textSize="15sp" android:enabled="false" />
+                </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Country" android:textColor="#555555" android:textSize="11sp" />
+                    <EditText android:id="@+id/etCountry" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="Country" android:textColor="@color/white" android:textSize="15sp" android:enabled="false" />
+                </LinearLayout>
+            </LinearLayout>
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#333333" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="10dp" android:background="#222222" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Student / Office ID"
-                android:textColor="#555555"
-                android:textSize="12sp" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="University / Office Name" android:textColor="#555555" android:textSize="11sp" />
+            <EditText android:id="@+id/etWorkplace" android:layout_width="match_parent" android:layout_height="wrap_content" android:background="@android:color/transparent" android:hint="Enter Name" android:textColor="@color/white" android:textSize="15sp" android:enabled="false" />
 
-            <EditText
-                android:id="@+id/etWorkplaceId"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:hint="Enter ID"
-                android:textColor="@color/white"
-                android:textColorHint="#333333"
-                android:textSize="16sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="10dp" android:background="#222222" />
 
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#333333" />
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Official Address (Work)" android:textColor="@color/primary_blue" android:textSize="11sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <EditText android:id="@+id/etWorkplaceAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Search Work Location" android:textColor="@color/white" android:textSize="15sp" android:imeOptions="actionSearch" android:inputType="text" android:enabled="false" />
+                <ImageView android:id="@+id/btnSearchWorkLocation" android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_search" app:tint="@color/primary_blue" />
+            </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Official Email"
-                android:textColor="#555555"
-                android:textSize="12sp" />
+            <View android:layout_width="match_parent" android:layout_height="1dp" android:layout_marginVertical="10dp" android:background="#222222" />
 
-            <EditText
-                android:id="@+id/etWorkplaceEmail"
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home Address" android:textColor="@color/secondary_vibrant" android:textSize="11sp" android:textStyle="bold" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
+                <EditText android:id="@+id/etHomeAddress" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:background="@android:color/transparent" android:hint="Search Home Location" android:textColor="@color/white" android:textSize="15sp" android:imeOptions="actionSearch" android:inputType="text" android:enabled="false" />
+                <ImageView android:id="@+id/btnSearchHomeLocation" android:layout_width="20dp" android:layout_height="20dp" android:src="@android:drawable/ic_menu_search" app:tint="@color/secondary_vibrant" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvSuggestions"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:hint="Official Email"
-                android:inputType="textEmailAddress"
-                android:textColor="@color/white"
-                android:textColorHint="#333333"
-                android:textSize="16sp" />
+                android:layout_marginTop="8dp"
+                android:visibility="gone" />
 
-            <View
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardProfileMap"
                 android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="12dp"
-                android:background="#333333" />
+                android:layout_height="180dp"
+                android:layout_marginTop="12dp"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="#333333"
+                app:strokeWidth="1dp"
+                android:visibility="gone">
+                <com.google.android.gms.maps.MapView
+                    android:id="@+id/profileMapView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent" />
+            </com.google.android.material.card.MaterialCardView>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Official Address"
-                android:textColor="#555555"
-                android:textSize="12sp" />
-
-            <EditText
-                android:id="@+id/etWorkplaceAddress"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@android:color/transparent"
-                android:hint="Address"
-                android:textColor="@color/white"
-                android:textColorHint="#333333"
-                android:textSize="16sp" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSaveProfile"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="55dp"
             android:layout_marginTop="24dp"
             android:backgroundTint="@color/primary_blue"
             android:text="Save Changes"
             android:textAllCaps="false"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:visibility="gone"
+            app:cornerRadius="12dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogout"
             style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="55dp"
             android:layout_marginTop="12dp"
             android:layout_marginBottom="32dp"
             android:text="Logout"
             android:textAllCaps="false"
             android:textColor="#FF5252"
-            app:strokeColor="#FF5252" />
+            app:strokeColor="#FF5252"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

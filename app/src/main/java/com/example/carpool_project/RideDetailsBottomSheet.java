@@ -1,29 +1,25 @@
 package com.example.carpool_project;
 
-import android.Manifest;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -37,7 +33,6 @@ public class RideDetailsBottomSheet extends BottomSheetDialogFragment implements
     private boolean isMyRideTab = false;
 
     public RideDetailsBottomSheet() {
-        // Required empty public constructor
     }
 
     public static RideDetailsBottomSheet newInstance(Ride ride) {
@@ -79,6 +74,9 @@ public class RideDetailsBottomSheet extends BottomSheetDialogFragment implements
         TextView tvSchedule = view.findViewById(R.id.tvDetailSchedule);
         Button btnChat = view.findViewById(R.id.btnChat);
         Button btnBookSeat = view.findViewById(R.id.btnBookSeat);
+        ImageButton btnOpenInMaps = view.findViewById(R.id.btnDetailOpenInMaps);
+        ImageButton btnZoomIn = view.findViewById(R.id.btnDetailZoomIn);
+        ImageButton btnZoomOut = view.findViewById(R.id.btnDetailZoomOut);
 
         tvDriverName.setText(ride.driverName != null ? ride.driverName : "Unknown");
         tvRating.setText(ride.driverRating + " ★");
@@ -87,11 +85,6 @@ public class RideDetailsBottomSheet extends BottomSheetDialogFragment implements
 
         String currentUserId = FirebaseAuth.getInstance().getUid();
 
-        // New Logic: 
-        // 1. My Post: Hide all buttons
-        // 2. My Ride Tab: Show only Chat
-        // 3. Discover Feed: Show only Book Seat (No Chat as requested)
-        
         if (ride.driverId != null && ride.driverId.equals(currentUserId)) {
             btnChat.setVisibility(View.GONE);
             btnBookSeat.setVisibility(View.GONE);
@@ -99,7 +92,7 @@ public class RideDetailsBottomSheet extends BottomSheetDialogFragment implements
             btnBookSeat.setVisibility(View.GONE);
             btnChat.setVisibility(View.VISIBLE);
         } else {
-            btnChat.setVisibility(View.GONE); // No chat on feed
+            btnChat.setVisibility(View.GONE);
             btnBookSeat.setVisibility(View.VISIBLE);
             btnBookSeat.setText("Book Seat");
         }
@@ -116,21 +109,41 @@ public class RideDetailsBottomSheet extends BottomSheetDialogFragment implements
         });
 
         btnBookSeat.setOnClickListener(v -> {
-            // Open the new Negotiation / Stop selection bottom sheet
             BookingOfferBottomSheet offerSheet = BookingOfferBottomSheet.newInstance(ride);
             offerSheet.show(getParentFragmentManager(), "BookingOffer");
             dismiss();
         });
+
+        if (btnOpenInMaps != null) {
+            btnOpenInMaps.setOnClickListener(v -> {
+                if (ride.startLat != 0 && ride.endLat != 0) {
+                    String uri = "https://www.google.com/maps/dir/?api=1&origin=" + ride.startLat + "," + ride.startLng + 
+                                "&destination=" + ride.endLat + "," + ride.endLng + "&travelmode=driving";
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                    intent.setPackage("com.google.android.apps.maps");
+                    startActivity(intent);
+                } else {
+                    Toast.makeText(getContext(), "Location not available", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        
+        if (btnZoomIn != null) btnZoomIn.setOnClickListener(v -> { if(mMap != null) mMap.animateCamera(CameraUpdateFactory.zoomIn()); });
+        if (btnZoomOut != null) btnZoomOut.setOnClickListener(v -> { if(mMap != null) mMap.animateCamera(CameraUpdateFactory.zoomOut()); });
     }
 
     @Override
     public void onMapReady(@NonNull GoogleMap googleMap) {
         mMap = googleMap;
-        if (ride != null) {
+        mMap.getUiSettings().setZoomControlsEnabled(false);
+        mMap.getUiSettings().setAllGesturesEnabled(true);
+        mMap.getUiSettings().setMapToolbarEnabled(true);
+
+        if (ride != null && ride.startLat != 0) {
             LatLng start = new LatLng(ride.startLat, ride.startLng);
             LatLng end = new LatLng(ride.endLat, ride.endLng);
-            mMap.addMarker(new MarkerOptions().position(start).title("Start"));
-            mMap.addMarker(new MarkerOptions().position(end).title("End"));
+            mMap.addMarker(new MarkerOptions().position(start).title("Start").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            mMap.addMarker(new MarkerOptions().position(end).title("End").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             mMap.addPolyline(new PolylineOptions().add(start, end).width(10).color(Color.parseColor("#2196F3")));
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 12));
         }

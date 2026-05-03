@@ -1,5 +1,6 @@
 package com.example.carpool_project;
 
+import android.content.Context;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
@@ -8,6 +9,7 @@ import android.os.Looper;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,6 +24,8 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -39,6 +43,7 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -61,6 +66,9 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private Runnable searchRunnable;
     private boolean isCameraSearching = false;
+    private String userCity = "";
+    private String userCountry = "";
+    private RecyclerView rvSuggestions;
 
     public static BookingOfferBottomSheet newInstance(Ride ride) {
         BookingOfferBottomSheet fragment = new BookingOfferBottomSheet();
@@ -90,6 +98,7 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
         spinnerSeats = view.findViewById(R.id.spinnerSeats);
         tvMinRate = view.findViewById(R.id.tvMinRate);
         tvInstruction = view.findViewById(R.id.tvBookingInstruction);
+        rvSuggestions = view.findViewById(R.id.rvSuggestions);
         Button btnConfirm = view.findViewById(R.id.btnConfirmBooking);
 
         dropoffLatLng = new LatLng(ride.endLat, ride.endLng);
@@ -97,6 +106,7 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
         etDropoff.setEnabled(false);
         etDropoff.setAlpha(0.7f);
 
+        fetchUserProfile();
         setupSeatsSpinner();
         loadAcceptedOffers();
         setupSearchFunctionality();
@@ -108,10 +118,26 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
             if (hasFocus) {
                 selectingPickup = true;
                 tvInstruction.setText("Tap map or type to select Pickup point");
+            } else {
+                rvSuggestions.setVisibility(View.GONE);
             }
         });
 
-        btnConfirm.setOnClickListener(v -> sendOffer());
+        btnConfirm.setOnClickListener(v -> fetchUserDetailsAndSendOffer());
+    }
+
+    private void fetchUserProfile() {
+        String userId = FirebaseAuth.getInstance().getUid();
+        if (userId == null) return;
+        FirebaseFirestore.getInstance().collection("users").document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        userCity = documentSnapshot.getString("city");
+                        userCountry = documentSnapshot.getString("country");
+                        if (userCity == null) userCity = "";
+                        if (userCountry == null) userCountry = "";
+                    }
+                });
     }
 
     private void setupSearchFunctionality() {
@@ -124,16 +150,18 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
             public void afterTextChanged(Editable s) {
                 if (isSelfChange) return;
                 String query = s.toString();
-                if (query.length() > 3) {
+                if (query.length() > 2) {
                     mainHandler.removeCallbacks(searchRunnable);
                     searchRunnable = () -> searchLocation(query);
-                    mainHandler.postDelayed(searchRunnable, 600);
+                    mainHandler.postDelayed(searchRunnable, 400);
+                } else {
+                    rvSuggestions.setVisibility(View.GONE);
                 }
             }
         };
         etPickup.addTextChangedListener(searchWatcher);
         etPickup.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE || actionId == EditorInfo.IME_ACTION_NEXT) {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || actionId == EditorInfo.IME_ACTION_DONE) {
                 mainHandler.removeCallbacks(searchRunnable);
                 searchLocation(etPickup.getText().toString());
                 return true;
@@ -144,27 +172,76 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
 
     private void searchLocation(String locationName) {
         if (TextUtils.isEmpty(locationName)) return;
-        String localizedQuery = locationName + ", Pakistan";
         executorService.execute(() -> {
             Geocoder geocoder = new Geocoder(requireContext(), Locale.getDefault());
             try {
-                List<Address> addresses = geocoder.getFromLocationName(localizedQuery, 1, 23.6345, 60.872, 37.0841, 79.4877);
-                if (addresses.isEmpty()) addresses = geocoder.getFromLocationName(localizedQuery, 1);
-                if (!addresses.isEmpty()) {
-                    Address address = addresses.get(0);
-                    LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
-                    mainHandler.post(() -> {
-                        isCameraSearching = true;
-                        pickupLatLng = latLng;
-                        if (mMap != null) {
-                            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
-                            updateMarkers();
-                            calculatePrice();
-                        }
-                    });
+                StringBuilder biasedQuery = new StringBuilder(locationName);
+                if (!userCity.isEmpty() && !locationName.toLowerCase().contains(userCity.toLowerCase())) {
+                    biasedQuery.append(", ").append(userCity);
                 }
+                if (!userCountry.isEmpty() && !locationName.toLowerCase().contains(userCountry.toLowerCase())) {
+                    biasedQuery.append(", ").append(userCountry);
+                }
+                List<Address> addresses = geocoder.getFromLocationName(biasedQuery.toString(), 25);
+                mainHandler.post(() -> {
+                    if (addresses != null && !addresses.isEmpty()) {
+                        sortAndShowSuggestions(addresses, locationName);
+                    } else {
+                        rvSuggestions.setVisibility(View.GONE);
+                    }
+                });
             } catch (IOException ignored) {}
         });
+    }
+
+    private void sortAndShowSuggestions(List<Address> addresses, String query) {
+        String lowerQuery = query.toLowerCase().trim();
+        
+        Collections.sort(addresses, (a, b) -> {
+            String f1 = a.getFeatureName() != null ? a.getFeatureName().toLowerCase() : "";
+            String f2 = b.getFeatureName() != null ? b.getFeatureName().toLowerCase() : "";
+            String full1 = a.getAddressLine(0).toLowerCase();
+            String full2 = b.getAddressLine(0).toLowerCase();
+
+            boolean exact1 = f1.equals(lowerQuery);
+            boolean exact2 = f2.equals(lowerQuery);
+            if (exact1 && !exact2) return -1;
+            if (!exact1 && exact2) return 1;
+
+            boolean starts1 = f1.startsWith(lowerQuery);
+            boolean starts2 = f2.startsWith(lowerQuery);
+            if (starts1 && !starts2) return -1;
+            if (!starts1 && starts2) return 1;
+
+            boolean fullStarts1 = full1.startsWith(lowerQuery);
+            boolean fullStarts2 = full2.startsWith(lowerQuery);
+            if (fullStarts1 && !fullStarts2) return -1;
+            if (!fullStarts1 && fullStarts2) return 1;
+
+            return full1.length() - full2.length();
+        });
+
+        rvSuggestions.setVisibility(View.VISIBLE);
+        rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvSuggestions.setAdapter(new SuggestionAdapter(addresses, address -> {
+            LatLng latLng = new LatLng(address.getLatitude(), address.getLongitude());
+            isSelfChange = true;
+            String readableName = address.getFeatureName();
+            if (readableName == null || readableName.length() < 3) readableName = address.getAddressLine(0);
+            
+            etPickup.setText(readableName);
+            isSelfChange = false;
+            
+            pickupLatLng = latLng;
+            isCameraSearching = true;
+            rvSuggestions.setVisibility(View.GONE);
+            
+            if (mMap != null) {
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16));
+                updateMarkers();
+                calculatePrice();
+            }
+        }));
     }
 
     private void setupSeatsSpinner() {
@@ -209,7 +286,10 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
             try {
                 List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
                 if (!addresses.isEmpty()) {
-                    String addressLine = addresses.get(0).getAddressLine(0);
+                    String readable = addresses.get(0).getFeatureName();
+                    if (readable == null || readable.length() < 3) readable = addresses.get(0).getAddressLine(0);
+                    
+                    final String addressLine = readable;
                     mainHandler.post(() -> {
                         et.setText(addressLine);
                         isSelfChange = false;
@@ -253,15 +333,13 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
             android.location.Location.distanceBetween(pickupLatLng.latitude, pickupLatLng.longitude, 
                     dropoffLatLng.latitude, dropoffLatLng.longitude, results);
             double distanceKm = results[0] / 1000.0;
-            // Formula: basefair=300rs + distance cost /km=10rs + time cost/min=5rs
-            // Assuming average speed 40km/h -> 1.5 min per km
             double estimatedTimeMin = distanceKm * 1.5; 
             calculatedMinPrice = 300 + (distanceKm * 10) + (estimatedTimeMin * 5);
             tvMinRate.setText(String.format(Locale.US, "Min Offer: Rs. %.0f", calculatedMinPrice));
         }
     }
 
-    private void sendOffer() {
+    private void fetchUserDetailsAndSendOffer() {
         String priceStr = etOfferPrice.getText().toString();
         if (pickupLatLng == null || dropoffLatLng == null || TextUtils.isEmpty(priceStr)) {
             Toast.makeText(getContext(), "Please select a pickup point", Toast.LENGTH_SHORT).show();
@@ -272,12 +350,32 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
             Toast.makeText(getContext(), "Offer must be at least Rs. " + (int)calculatedMinPrice, Toast.LENGTH_SHORT).show();
             return;
         }
+
         String userId = FirebaseAuth.getInstance().getUid();
+        if (userId == null) return;
+
+        FirebaseFirestore.getInstance().collection("users").document(userId).get()
+                .addOnSuccessListener(documentSnapshot -> {
+                    if (documentSnapshot.exists()) {
+                        String name = documentSnapshot.getString("name");
+                        String email = documentSnapshot.getString("email");
+                        sendOffer(userId, name, email, offeredPrice);
+                    } else {
+                        sendOffer(userId, "Passenger", "No email", offeredPrice);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    sendOffer(userId, "Passenger", "No email", offeredPrice);
+                });
+    }
+
+    private void sendOffer(String userId, String name, String email, double offeredPrice) {
         String offerId = UUID.randomUUID().toString();
-        BookingOffer offer = new BookingOffer(offerId, ride.rideId, userId, "Passenger", "email", 
+        BookingOffer offer = new BookingOffer(offerId, ride.rideId, userId, name, email, 
                 ride.driverId, pickupLatLng.latitude, pickupLatLng.longitude, dropoffLatLng.latitude, dropoffLatLng.longitude,
                 etPickup.getText().toString(), etDropoff.getText().toString(), offeredPrice, 
                 (Integer) spinnerSeats.getSelectedItem(), "pending", System.currentTimeMillis());
+
         FirebaseFirestore.getInstance().collection("offers").document(offerId).set(offer)
                 .addOnSuccessListener(aVoid -> {
                     sendNotification(ride.driverId, "New Booking Offer", "You have a new offer for your ride to " + ride.destination);
@@ -294,4 +392,48 @@ public class BookingOfferBottomSheet extends BottomSheetDialogFragment implement
 
     @Override
     public void onDestroy() { super.onDestroy(); executorService.shutdown(); }
+
+    private static class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.ViewHolder> {
+        private final List<Address> addresses;
+        private final OnAddressClickListener listener;
+
+        interface OnAddressClickListener { void onAddressClick(Address address); }
+
+        SuggestionAdapter(List<Address> addresses, OnAddressClickListener listener) {
+            this.addresses = addresses;
+            this.listener = listener;
+        }
+
+        @NonNull
+        @Override
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
+            return new ViewHolder(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+            Address address = addresses.get(position);
+            String mainText = address.getFeatureName() != null ? address.getFeatureName() : "";
+            String subText = address.getAddressLine(0);
+            
+            holder.tv1.setText(mainText);
+            holder.tv2.setText(subText);
+            holder.tv1.setTextColor(0xFFFFFFFF);
+            holder.tv2.setTextColor(0xFFAAAAAA);
+            
+            holder.itemView.setOnClickListener(v -> listener.onAddressClick(address));
+        }
+
+        @Override
+        public int getItemCount() { return addresses.size(); }
+        static class ViewHolder extends RecyclerView.ViewHolder {
+            TextView tv1, tv2;
+            ViewHolder(View v) { 
+                super(v);
+                tv1 = v.findViewById(android.R.id.text1);
+                tv2 = v.findViewById(android.R.id.text2);
+            }
+        }
+    }
 }

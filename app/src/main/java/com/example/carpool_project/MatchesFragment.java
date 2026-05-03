@@ -24,7 +24,7 @@ public class MatchesFragment extends Fragment {
             @NonNull
             @Override
             public Fragment createFragment(int position) {
-                return position == 0 ? new MyPostsFragment() : new Fragment(); // Placeholder for Matches logic
+                return position == 0 ? new MyPostsFragment() : new Fragment();
             }
 
             @Override

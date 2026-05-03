@@ -37,7 +37,6 @@ public class LoginActivity extends AppCompatActivity {
         tvSignup = findViewById(R.id.tvSignup);
         ivAnimatedCar = findViewById(R.id.ivAnimatedCar);
 
-        // Start Car Animation
         Animation carAnim = AnimationUtils.loadAnimation(this, R.anim.car_animation);
         if (ivAnimatedCar != null) {
             ivAnimatedCar.startAnimation(carAnim);
@@ -67,7 +66,6 @@ public class LoginActivity extends AppCompatActivity {
                     } else {
                         String message = "Login failed: " + task.getException().getMessage();
                         
-                        // Check if it is specifically a network error
                         if (task.getException() instanceof FirebaseNetworkException) {
                             message = "Network error. Please check your internet connection and try again.";
                         }

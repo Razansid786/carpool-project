@@ -56,7 +56,6 @@ public class ChatActivity extends AppCompatActivity {
             return;
         }
 
-        // Sort IDs to ensure same room for both users
         if (currentUserId.compareTo(otherUserId) < 0) {
             chatRoomId = currentUserId + "_" + otherUserId;
         } else {
@@ -76,7 +75,6 @@ public class ChatActivity extends AppCompatActivity {
         rvChat.setLayoutManager(new LinearLayoutManager(this));
         rvChat.setAdapter(adapter);
 
-        // Path: chats / rideId / chatRoomId
         chatRef = FirebaseDatabase.getInstance().getReference("chats").child(rideId).child(chatRoomId);
 
         loadOtherUserInfo();
@@ -84,7 +82,6 @@ public class ChatActivity extends AppCompatActivity {
 
         btnSendMessage.setOnClickListener(v -> sendMessage());
 
-        // Handle "Enter" key on keyboard to send message
         etMessage.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEND) {
                 sendMessage();

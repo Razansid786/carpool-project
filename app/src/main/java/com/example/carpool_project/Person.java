@@ -7,24 +7,33 @@ public class Person {
 
     public String name;
     public String email;
-    public String role; // e.g., "Student", "Office Worker"
+    public String role; 
+    public String city;
+    public String country;
     public String profileImageUrl; 
     
-    // New fields for security and info
-    public String workplace; // University or Office Name
+    public String workplace; 
     public String workplaceId;
     public String workplaceEmail;
     public String workplaceAddress;
+    public double workplaceLat;
+    public double workplaceLng;
+
+    public String homeAddress;
+    public double homeLat;
+    public double homeLng;
 
     public Person() {}
 
-    public Person(String userId, String name, String email, String role, String profileImageUrl, String password, String phoneNumber) {
+    public Person(String userId, String name, String email, String role, String profileImageUrl, String password, String phoneNumber, String city, String country) {
         this.userId = userId;
         this.password = password;
         this.phoneNumber = phoneNumber;
         this.name = name;
         this.email = email;
         this.role = role;
+        this.city = city;
+        this.country = country;
         this.profileImageUrl = profileImageUrl;
     }
 }

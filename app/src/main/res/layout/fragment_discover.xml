@@ -7,7 +7,6 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Header Section -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,7 +15,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Shared Ride"
+            android:text="My Feed"
             android:textColor="@color/white"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -31,7 +30,25 @@
             app:tint="@color/white" />
     </RelativeLayout>
 
-    <!-- Search Bar -->
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayoutFeed"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        app:tabTextColor="#888888"
+        app:tabSelectedTextColor="@color/white"
+        app:tabIndicatorColor="@color/primary_blue"
+        android:layout_marginBottom="12dp">
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pickup Rides" />
+        <com.google.android.material.tabs.TabItem
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Drop off Rides" />
+    </com.google.android.material.tabs.TabLayout>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="50dp"
@@ -60,7 +77,6 @@
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Filter Section -->
     <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

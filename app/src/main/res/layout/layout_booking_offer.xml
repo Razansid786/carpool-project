@@ -21,7 +21,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <!-- Map for Pickup/Dropoff selection -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
@@ -54,6 +53,14 @@
             android:imeOptions="actionSearch"
             android:inputType="textPostalAddress"
             android:layout_marginBottom="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvSuggestions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="150dp"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
 
         <EditText
             android:id="@+id/etDropoff"

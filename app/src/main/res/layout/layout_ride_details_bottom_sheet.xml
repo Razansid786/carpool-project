@@ -71,17 +71,66 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <!-- Map View for Route -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="220dp"
         android:layout_marginBottom="16dp"
         app:cardCornerRadius="12dp">
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/mapDetailContainer"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent">
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/mapDetailContainer"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_alignParentTop="true"
+                android:layout_margin="10dp"
+                android:orientation="vertical"
+                android:gravity="center">
+
+                <ImageButton
+                    android:id="@+id/btnDetailOpenInMaps"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginBottom="8dp"
+                    android:background="@drawable/badge_bg"
+                    android:backgroundTint="#CC000000"
+                    android:src="@android:drawable/ic_dialog_map"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    app:tint="@color/white" />
+
+                <ImageButton
+                    android:id="@+id/btnDetailZoomIn"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/badge_bg"
+                    android:backgroundTint="#AAFFFFFF"
+                    android:src="@android:drawable/ic_input_add"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    app:tint="@color/black" />
+
+                <ImageButton
+                    android:id="@+id/btnDetailZoomOut"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/badge_bg"
+                    android:backgroundTint="#AAFFFFFF"
+                    android:src="@android:drawable/ic_input_delete"
+                    android:padding="8dp"
+                    android:scaleType="centerInside"
+                    app:tint="@color/black" />
+            </LinearLayout>
+        </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <TextView

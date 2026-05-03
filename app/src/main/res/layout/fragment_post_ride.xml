@@ -38,6 +38,24 @@
                     android:orientation="vertical"
                     android:padding="8dp">
 
+                    <com.google.android.material.tabs.TabLayout
+                        android:id="@+id/tabLayoutRideType"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@android:color/transparent"
+                        app:tabTextColor="#888888"
+                        app:tabSelectedTextColor="@color/white"
+                        app:tabIndicatorColor="@color/primary_blue">
+                        <com.google.android.material.tabs.TabItem
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Pickup" />
+                        <com.google.android.material.tabs.TabItem
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Drop off" />
+                    </com.google.android.material.tabs.TabLayout>
+
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
@@ -99,6 +117,14 @@
                             app:tint="#888888"
                             android:visibility="gone"/>
                     </RelativeLayout>
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvSuggestions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:maxHeight="200dp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </RelativeLayout>
@@ -127,7 +153,6 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp" />
 
-                <!-- Single line scrollable chips for days to avoid Friday going down -->
                 <HorizontalScrollView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -154,7 +179,6 @@
                     android:orientation="horizontal"
                     android:layout_marginBottom="16dp">
 
-                    <!-- TextInputLayout changed to show it is a picker -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilTime"
                         android:layout_width="0dp"

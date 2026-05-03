@@ -35,7 +35,6 @@ public class OnboardingActivity extends AppCompatActivity {
 
         TabLayout tabLayout = findViewById(R.id.tabLayout);
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
-            // No text needed for dots
         }).attach();
 
         viewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
@@ -52,7 +51,6 @@ public class OnboardingActivity extends AppCompatActivity {
 
         btnGetStarted.setOnClickListener(v -> {
             markOnboardingFinished();
-            // Show Login screen instead of Main screen
             startActivity(new Intent(OnboardingActivity.this, LoginActivity.class));
             finish();
         });
@@ -85,7 +83,7 @@ public class OnboardingActivity extends AppCompatActivity {
     private void markOnboardingFinished() {
         SharedPreferences preferences = getSharedPreferences("onboarding", MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putBoolean("isFirstTime", false);
+        editor.putBoolean("isFirstTime", true);
         editor.apply();
     }
 }
