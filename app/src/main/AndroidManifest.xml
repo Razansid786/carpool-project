@@ -28,7 +28,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBp4t1Y9Vv9l22m8ak1nhQ_VdB9qvUQ8eE" />
+            android:value="AIzaSyBzQDzERYt_bgf60pGegUWaBTiq5vIM2DQ" />
 
         <activity
             android:name=".SplashActivity"
@@ -40,7 +40,9 @@
         </activity>
 
         <activity android:name=".OnboardingActivity" />
-        <activity android:name=".SignupActivity" />
+        <activity
+            android:name=".SignupActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".LoginActivity" />
         <activity android:name=".VerifyOtpActivity" />
         <activity

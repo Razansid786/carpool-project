@@ -16,12 +16,11 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentChange;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ListenerRegistration notificationListener;
+    private com.google.firebase.firestore.ListenerRegistration notificationListener;
     private static final int PERMISSION_REQUEST_CODE = 123;
     private long appStartTime;
 

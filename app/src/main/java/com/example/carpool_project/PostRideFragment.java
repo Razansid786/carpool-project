@@ -171,10 +171,6 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
                 
                 userCity = doc.getString("city");
                 userCountry = doc.getString("country");
-                if (workplaceAddress == null) workplaceAddress = "";
-                if (homeAddress == null) homeAddress = "";
-                if (userCity == null) userCity = "";
-                if (userCountry == null) userCountry = "";
                 
                 updateFieldsForRideType(tabLayoutRideType.getSelectedTabPosition());
             }
@@ -184,25 +180,21 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     private void updateFieldsForRideType(int position) {
         isSelfChange = true;
         if (position == 0) {
-            etTo.setText(workplaceAddress);
+            etTo.setText(workplaceAddress != null ? workplaceAddress : "");
             etTo.setEnabled(false);
             btnClearTo.setVisibility(View.GONE);
-            
-            etFrom.setText(homeAddress);
+            etFrom.setText(homeAddress != null ? homeAddress : "");
             etFrom.setEnabled(true);
             btnClearFrom.setVisibility(View.VISIBLE);
-            
             startLatLng = homeLatLng;
             endLatLng = workplaceLatLng;
         } else {
-            etFrom.setText(workplaceAddress);
+            etFrom.setText(workplaceAddress != null ? workplaceAddress : "");
             etFrom.setEnabled(false);
             btnClearFrom.setVisibility(View.GONE);
-            
-            etTo.setText(homeAddress);
+            etTo.setText(homeAddress != null ? homeAddress : "");
             etTo.setEnabled(true);
             btnClearTo.setVisibility(View.VISIBLE);
-            
             startLatLng = workplaceLatLng;
             endLatLng = homeLatLng;
         }
@@ -271,10 +263,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
                 if (!userCity.isEmpty() && !query.toLowerCase().contains(userCity.toLowerCase())) {
                     biasedQuery.append(", ").append(userCity);
                 }
-                if (!userCountry.isEmpty() && !query.toLowerCase().contains(userCountry.toLowerCase())) {
-                    biasedQuery.append(", ").append(userCountry);
-                }
-                List<Address> addresses = coder.getFromLocationName(biasedQuery.toString(), 25);
+                List<Address> addresses = coder.getFromLocationName(biasedQuery.toString(), 15);
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
                         if (addresses != null && !addresses.isEmpty()) {
@@ -291,27 +280,6 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void sortAndShowSuggestions(List<Address> addresses, boolean isFrom, String query) {
-        String lowerQuery = query.toLowerCase().trim();
-        
-        Collections.sort(addresses, (a, b) -> {
-            String f1 = a.getFeatureName() != null ? a.getFeatureName().toLowerCase() : "";
-            String f2 = b.getFeatureName() != null ? b.getFeatureName().toLowerCase() : "";
-            String full1 = a.getAddressLine(0).toLowerCase();
-            String full2 = b.getAddressLine(0).toLowerCase();
-
-            boolean exact1 = f1.equals(lowerQuery);
-            boolean exact2 = f2.equals(lowerQuery);
-            if (exact1 && !exact2) return -1;
-            if (!exact1 && exact2) return 1;
-
-            boolean starts1 = f1.startsWith(lowerQuery);
-            boolean starts2 = f2.startsWith(lowerQuery);
-            if (starts1 && !starts2) return -1;
-            if (!starts1 && starts2) return 1;
-
-            return full1.length() - full2.length();
-        });
-
         rvSuggestions.setVisibility(View.VISIBLE);
         rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext()));
         rvSuggestions.setAdapter(new SuggestionAdapter(addresses, address -> {
@@ -375,32 +343,19 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
         boolean hasMarkers = false;
 
         if (startLatLng != null) {
-            mMap.addMarker(new MarkerOptions()
-                .position(startLatLng)
-                .title("Start")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+            mMap.addMarker(new MarkerOptions().position(startLatLng).title("Start").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
             builder.include(startLatLng);
             hasMarkers = true;
         }
         if (endLatLng != null) {
-            mMap.addMarker(new MarkerOptions()
-                .position(endLatLng)
-                .title("Destination")
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+            mMap.addMarker(new MarkerOptions().position(endLatLng).title("Destination").icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
             builder.include(endLatLng);
             hasMarkers = true;
         }
 
         if (startLatLng != null && endLatLng != null) {
-            mMap.addPolyline(new PolylineOptions()
-                .add(startLatLng, endLatLng)
-                .width(10)
-                .color(Color.parseColor("#6366F1"))
-                .geodesic(true));
-            
-            try {
-                mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150));
-            } catch (IllegalStateException e) {
+            mMap.addPolyline(new PolylineOptions().add(startLatLng, endLatLng).width(10).color(Color.parseColor("#6366F1")).geodesic(true));
+            try { mMap.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 150)); } catch (Exception ignored) {
                 mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(startLatLng, 15));
             }
         } else if (hasMarkers) {
@@ -416,12 +371,9 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
             List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
             if (addresses != null && !addresses.isEmpty()) {
                 String feature = addresses.get(0).getFeatureName();
-                if (feature != null && feature.length() > 3) return feature;
-                return addresses.get(0).getAddressLine(0);
+                return (feature != null && feature.length() > 3) ? feature : addresses.get(0).getAddressLine(0);
             }
-        } catch (Exception e) { 
-            Log.e("PostRide", "Geocoding failed", e);
-        }
+        } catch (Exception ignored) {}
         return latLng.latitude + ", " + latLng.longitude;
     }
 
@@ -446,6 +398,21 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
             return;
         }
 
+        // Geocoding fallback
+        if (startLatLng == null || endLatLng == null) {
+            Geocoder geocoder = new Geocoder(getContext(), Locale.getDefault());
+            try {
+                if (startLatLng == null) {
+                    List<Address> list = geocoder.getFromLocationName(from + ", " + userCity, 1);
+                    if (list != null && !list.isEmpty()) startLatLng = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+                }
+                if (endLatLng == null) {
+                    List<Address> list = geocoder.getFromLocationName(to + ", " + userCity, 1);
+                    if (list != null && !list.isEmpty()) endLatLng = new LatLng(list.get(0).getLatitude(), list.get(0).getLongitude());
+                }
+            } catch (IOException ignored) {}
+        }
+
         int seats = Integer.parseInt(seatsStr);
         String rideId = UUID.randomUUID().toString();
         if (mAuth.getCurrentUser() == null) return;
@@ -464,9 +431,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
 
                 db.collection("rides").document(rideId).set(ride)
                         .addOnSuccessListener(aVoid -> {
-                            if (getContext() != null) {
-                                Toast.makeText(getContext(), "Ride Posted!", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(getContext(), "Ride Posted!", Toast.LENGTH_SHORT).show();
                             if (getActivity() != null) {
                                 getActivity().getSupportFragmentManager().beginTransaction()
                                         .replace(R.id.fragment_container, new DiscoverFragment())
@@ -480,44 +445,31 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     private static class SuggestionAdapter extends RecyclerView.Adapter<SuggestionAdapter.ViewHolder> {
         private final List<Address> addresses;
         private final OnAddressClickListener listener;
-
         interface OnAddressClickListener { void onAddressClick(Address address); }
-
         SuggestionAdapter(List<Address> addresses, OnAddressClickListener listener) {
             this.addresses = addresses;
             this.listener = listener;
         }
-
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(parent.getContext()).inflate(android.R.layout.simple_list_item_2, parent, false);
             return new ViewHolder(v);
         }
-
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Address address = addresses.get(position);
-            String mainText = address.getFeatureName() != null ? address.getFeatureName() : "";
-            String subText = address.getAddressLine(0);
-            
-            holder.tv1.setText(mainText);
-            holder.tv2.setText(subText);
+            holder.tv1.setText(address.getFeatureName() != null ? address.getFeatureName() : "");
+            holder.tv2.setText(address.getAddressLine(0));
             holder.tv1.setTextColor(0xFFFFFFFF);
             holder.tv2.setTextColor(0xFFAAAAAA);
-            
             holder.itemView.setOnClickListener(v -> listener.onAddressClick(address));
         }
-
         @Override
         public int getItemCount() { return addresses.size(); }
         static class ViewHolder extends RecyclerView.ViewHolder {
             TextView tv1, tv2;
-            ViewHolder(View v) { 
-                super(v);
-                tv1 = v.findViewById(android.R.id.text1);
-                tv2 = v.findViewById(android.R.id.text2);
-            }
+            ViewHolder(View v) { super(v); tv1 = v.findViewById(android.R.id.text1); tv2 = v.findViewById(android.R.id.text2); }
         }
     }
 }

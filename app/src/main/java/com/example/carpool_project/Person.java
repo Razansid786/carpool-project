@@ -36,4 +36,11 @@ public class Person {
         this.country = country;
         this.profileImageUrl = profileImageUrl;
     }
+
+    public Person(String userId, String name, String email, String role, String profileImageUrl, String password, String phoneNumber, String city, String country, String workplace, String workplaceAddress, String homeAddress) {
+        this(userId, name, email, role, profileImageUrl, password, phoneNumber, city, country);
+        this.workplace = workplace;
+        this.workplaceAddress = workplaceAddress;
+        this.homeAddress = homeAddress;
+    }
 }

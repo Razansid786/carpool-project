@@ -1,6 +1,8 @@
 package com.example.carpool_project;
 
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -24,11 +26,15 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public class SignupActivity extends AppCompatActivity {
 
     private EditText etName, etEmail, etPhone, etCity, etCountry, etPassword;
+    private EditText etWorkplace, etWorkplaceAddress, etHomeAddress;
     private Spinner spinnerRole;
     private TextView tvRoleLabel;
     private Button btnSignup;
@@ -51,6 +57,11 @@ public class SignupActivity extends AppCompatActivity {
         etCity = findViewById(R.id.etCity);
         etCountry = findViewById(R.id.etCountry);
         etPassword = findViewById(R.id.etPassword);
+        
+        etWorkplace = findViewById(R.id.etWorkplace);
+        etWorkplaceAddress = findViewById(R.id.etWorkplaceAddress);
+        etHomeAddress = findViewById(R.id.etHomeAddress);
+        
         spinnerRole = findViewById(R.id.spinnerRole);
         tvRoleLabel = findViewById(R.id.tvRoleLabel);
         btnSignup = findViewById(R.id.btnSignup);
@@ -94,40 +105,35 @@ public class SignupActivity extends AppCompatActivity {
         String phone = etPhone.getText().toString().trim();
         String city = etCity.getText().toString().trim();
         String country = etCountry.getText().toString().trim();
+        String workplace = etWorkplace.getText().toString().trim();
+        String workplaceAddr = etWorkplaceAddress.getText().toString().trim();
+        String homeAddr = etHomeAddress.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
         String role = spinnerRole.getSelectedItem().toString();
 
-        if (TextUtils.isEmpty(name)) {
-            etName.setError("Name is required");
-            return;
-        }
-        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Valid email is required");
-            return;
-        }
-        if (TextUtils.isEmpty(phone) || phone.length() < 10) {
-            etPhone.setError("Valid phone number is required");
-            return;
-        }
-        if (TextUtils.isEmpty(city)) {
-            etCity.setError("City is required");
-            return;
-        }
-        if (TextUtils.isEmpty(country)) {
-            etCountry.setError("Country is required");
-            return;
-        }
-        if (TextUtils.isEmpty(password) || password.length() < 6) {
-            etPassword.setError("Password must be at least 6 characters");
-            return;
-        }
+        if (TextUtils.isEmpty(name)) { etName.setError("Name required"); return; }
+        if (TextUtils.isEmpty(email) || !Patterns.EMAIL_ADDRESS.matcher(email).matches()) { etEmail.setError("Valid email required"); return; }
+        if (TextUtils.isEmpty(phone) || phone.length() < 10) { etPhone.setError("Valid phone required"); return; }
+        if (TextUtils.isEmpty(city)) { etCity.setError("City required"); return; }
+        if (TextUtils.isEmpty(country)) { etCountry.setError("Country required"); return; }
+        if (TextUtils.isEmpty(workplace)) { etWorkplace.setError("Workplace required"); return; }
+        if (TextUtils.isEmpty(workplaceAddr)) { etWorkplaceAddress.setError("Workplace address required"); return; }
+        if (TextUtils.isEmpty(homeAddr)) { etHomeAddress.setError("Home address required"); return; }
+        if (TextUtils.isEmpty(password) || password.length() < 6) { etPassword.setError("Min 6 characters"); return; }
 
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
                         if (user != null) {
-                            saveUserToFirestore(user.getUid(), name, email, phone, role, city, country, password);
+                            // Send automated verification email via Firebase
+                            user.sendEmailVerification()
+                                    .addOnCompleteListener(verificationTask -> {
+                                        if (verificationTask.isSuccessful()) {
+                                            Log.d("Signup", "Verification email sent to " + email);
+                                        }
+                                    });
+                            saveUserToFirestore(user.getUid(), name, email, phone, role, city, country, password, workplace, workplaceAddr, homeAddr);
                         }
                     } else {
                         String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
@@ -136,32 +142,42 @@ public class SignupActivity extends AppCompatActivity {
                 });
     }
 
-    private void saveUserToFirestore(String userId, String name, String email, String phone, String role, String city, String country, String password) {
-        Person person = new Person(userId, name, email, role, "", password, phone, city, country);
+    private void saveUserToFirestore(String userId, String name, String email, String phone, String role, String city, String country, String password, String workplace, String workplaceAddr, String homeAddr) {
+        Person person = new Person(userId, name, email, role, "", password, phone, city, country, workplace, workplaceAddr, homeAddr);
         
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            List<Address> workLocs = geocoder.getFromLocationName(workplaceAddr + ", " + city, 1);
+            if (workLocs != null && !workLocs.isEmpty()) {
+                person.workplaceLat = workLocs.get(0).getLatitude();
+                person.workplaceLng = workLocs.get(0).getLongitude();
+            }
+            List<Address> homeLocs = geocoder.getFromLocationName(homeAddr + ", " + city, 1);
+            if (homeLocs != null && !homeLocs.isEmpty()) {
+                person.homeLat = homeLocs.get(0).getLatitude();
+                person.homeLng = homeLocs.get(0).getLongitude();
+            }
+        } catch (IOException e) {
+            Log.e("Signup", "Geocoding failed", e);
+        }
+
         db.collection("users").document(userId)
                 .set(person)
                 .addOnSuccessListener(aVoid -> {
-                    Log.d("Firestore", "User profile saved for: " + userId);
+                    Log.d("Firestore", "User profile saved: " + userId);
+                    sendNotificationToFirestore(userId, "Welcome to Carpool!", "Successfully signed up. Please check your email for verification.");
+                    NotificationHelper.showNotification(this, "Welcome!", "Signup successful. Check email.");
                     
-                    String title = "Welcome to Carpool!";
-                    String message = "Successfully signed to Carpool. Enjoy your rides!";
+                    // Fallback Intent-based email if needed, but Firebase verification is more "receiving"
+                    // sendWelcomeEmail(email); 
 
-                    sendNotificationToFirestore(userId, title, message);
-
-                    NotificationHelper.showNotification(this, title, message);
-
-                    sendWelcomeEmail(email);
-
-                    Toast.makeText(SignupActivity.this, "Signup successful! Please login.", Toast.LENGTH_LONG).show();
-                    
+                    Toast.makeText(SignupActivity.this, "Signup successful! Verification email sent.", Toast.LENGTH_LONG).show();
                     new android.os.Handler().postDelayed(() -> {
                         startActivity(new Intent(SignupActivity.this, LoginActivity.class));
                         finish();
-                    }, 500);
+                    }, 1500);
                 })
                 .addOnFailureListener(e -> {
-                    Log.e("Firestore", "Error saving user", e);
                     Toast.makeText(SignupActivity.this, "Error saving user data", Toast.LENGTH_SHORT).show();
                 });
     }
@@ -170,18 +186,5 @@ public class SignupActivity extends AppCompatActivity {
         String id = UUID.randomUUID().toString();
         Notification notification = new Notification(id, userId, title, message, System.currentTimeMillis());
         db.collection("notifications").document(id).set(notification);
-    }
-
-    private void sendWelcomeEmail(String userEmail) {
-        Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:" + userEmail));
-        intent.putExtra(Intent.EXTRA_SUBJECT, "Welcome to Carpool!");
-        intent.putExtra(Intent.EXTRA_TEXT, "Hello! Successfully signed to Carpool. We are excited to have you on board!");
-        
-        try {
-            startActivity(Intent.createChooser(intent, "Send Welcome Email"));
-        } catch (android.content.ActivityNotFoundException ex) {
-            Toast.makeText(this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
-        }
     }
 }
