@@ -236,6 +236,15 @@
                 android:imeOptions="actionDone"
                 android:layout_marginBottom="12dp"/>
 
+            <TextView
+                android:id="@+id/tvRoleLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Your Role"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"/>
+
             <Spinner
                 android:id="@+id/spinnerRole"
                 android:layout_width="match_parent"
