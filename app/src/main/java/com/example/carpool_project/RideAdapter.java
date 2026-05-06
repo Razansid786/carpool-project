@@ -11,6 +11,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -38,6 +39,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.OnMapsSdkInitializedCallback;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -87,7 +89,10 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
     @NonNull
     @Override
     public RideViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        MapsInitializer.initialize(parent.getContext().getApplicationContext());
+        // Initialize Maps with the Latest renderer to fix "service from broker" issues
+        MapsInitializer.initialize(parent.getContext().getApplicationContext(), MapsInitializer.Renderer.LATEST, renderer -> {
+            Log.d("RideAdapter", "Maps SDK initialized with renderer: " + renderer.name());
+        });
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_ride_card, parent, false);
         return new RideViewHolder(view);
     }
@@ -379,6 +384,7 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                 "Driver Phone: " + ride.driverPhone;
 
         ChatMessage msg = new ChatMessage(uid, complaintMsg, System.currentTimeMillis());
+        // Only write to personal user path to avoid permission denied
         FirebaseDatabase.getInstance().getReference("support_chats").child(uid).push().setValue(msg);
 
         Intent intent = new Intent(context, ChatActivity.class);

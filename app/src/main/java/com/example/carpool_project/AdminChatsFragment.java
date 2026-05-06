@@ -2,10 +2,12 @@ package com.example.carpool_project;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -30,6 +33,7 @@ public class AdminChatsFragment extends Fragment {
     private ChatListAdapter adapter;
     private List<SupportChatEntry> chatEntries;
     private DatabaseReference supportRef;
+    private ValueEventListener supportListener;
 
     @Nullable
     @Override
@@ -43,14 +47,32 @@ public class AdminChatsFragment extends Fragment {
         rvChats.setLayoutManager(new LinearLayoutManager(getContext()));
         rvChats.setAdapter(adapter);
         
-        supportRef = FirebaseDatabase.getInstance().getReference("support_chats");
-        loadSupportChats();
+        checkAdminAndLoad();
         
         return view;
     }
 
+    private void checkAdminAndLoad() {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        FirebaseFirestore.getInstance().collection("users").document(uid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists() && "admin".equals(doc.getString("role"))) {
+                        supportRef = FirebaseDatabase.getInstance().getReference("support_chats");
+                        loadSupportChats();
+                    } else {
+                        Log.w("AdminChats", "Non-admin user tried to access admin chats");
+                        if (isAdded()) Toast.makeText(getContext(), "Access Denied", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .addOnFailureListener(e -> Log.e("AdminChats", "Failed to verify admin", e));
+    }
+
     private void loadSupportChats() {
-        supportRef.addValueEventListener(new ValueEventListener() {
+        if (supportRef == null) return;
+        
+        supportListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 chatEntries.clear();
@@ -65,8 +87,19 @@ public class AdminChatsFragment extends Fragment {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
-        });
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("AdminChats", "Database error: " + error.getMessage());
+            }
+        };
+        supportRef.addValueEventListener(supportListener);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (supportRef != null && supportListener != null) {
+            supportRef.removeEventListener(supportListener);
+        }
     }
 
     private void fetchUserName(SupportChatEntry entry) {
@@ -81,7 +114,7 @@ public class AdminChatsFragment extends Fragment {
 
     private void fetchLastMessage(SupportChatEntry entry) {
         Query lastMsgQuery = supportRef.child(entry.userId).orderByKey().limitToLast(1);
-        lastMsgQuery.addValueEventListener(new ValueEventListener() {
+        lastMsgQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot ds : snapshot.getChildren()) {

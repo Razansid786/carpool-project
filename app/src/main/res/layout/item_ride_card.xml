@@ -358,6 +358,19 @@
                     app:iconTint="@color/secondary_vibrant" />
 
                 <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnChatDriver"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Chat"
+                    android:textColor="@color/primary_vibrant"
+                    app:strokeColor="@color/primary_vibrant"
+                    app:icon="@android:drawable/stat_notify_chat"
+                    app:iconTint="@color/primary_vibrant" />
+
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShareRide"
                     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                     android:layout_width="0dp"
