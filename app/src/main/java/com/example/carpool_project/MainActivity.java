@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
             int id = item.getItemId();
-
             if (id == R.id.nav_discover) {
                 selectedFragment = new DiscoverFragment();
             } else if (id == R.id.nav_post) {

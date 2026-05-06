@@ -1,5 +1,7 @@
 package com.example.carpool_project;
 
+import androidx.core.widget.NestedScrollView;
+
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -24,7 +26,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -66,7 +67,7 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
     private MapView mapView;
     private GoogleMap googleMap;
     private MaterialCardView cardSignupMap;
-    private ScrollView signupScrollView;
+    private NestedScrollView signupScrollView;
     private RecyclerView rvSuggestions;
     
     private double workplaceLat = 0, workplaceLng = 0;
@@ -146,6 +147,7 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
     @SuppressLint("ClickableViewAccessibility")
     private void fixMapScrolling() {
         mapView.setOnTouchListener((v, event) -> {
+            if (signupScrollView == null) return false;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                 case MotionEvent.ACTION_MOVE:
@@ -153,9 +155,9 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
                     return false;
                 case MotionEvent.ACTION_UP:
                     signupScrollView.requestDisallowInterceptTouchEvent(false);
-                    return true;
+                    return false;
                 default:
-                    return true;
+                    return false;
             }
         });
     }
@@ -343,6 +345,7 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
         if (TextUtils.isEmpty(homeAddr)) { etHomeAddress.setError("Home address required"); return; }
         if (TextUtils.isEmpty(password) || password.length() < 6) { etPassword.setError("Min 6 characters"); return; }
 
+        btnSignup.setEnabled(false);
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
@@ -357,6 +360,7 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
                             saveUserToFirestore(user.getUid(), name, email, phone, role, city, country, password, workplace, workplaceAddr, homeAddr);
                         }
                     } else {
+                        btnSignup.setEnabled(true);
                         String errorMsg = task.getException() != null ? task.getException().getMessage() : "Authentication failed";
                         Toast.makeText(SignupActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                     }
@@ -384,6 +388,7 @@ public class SignupActivity extends AppCompatActivity implements OnMapReadyCallb
                     }, 1500);
                 })
                 .addOnFailureListener(e -> {
+                    btnSignup.setEnabled(true);
                     Toast.makeText(SignupActivity.this, "Error saving user data", Toast.LENGTH_SHORT).show();
                 });
     }

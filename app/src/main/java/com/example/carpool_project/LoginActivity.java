@@ -3,11 +3,13 @@ package com.example.carpool_project;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,6 +17,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseUser;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -22,6 +27,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin;
     private TextView tvSignup;
     private ImageView ivAnimatedCar;
+    private ProgressBar progressBar;
     private FirebaseAuth mAuth;
 
     @Override
@@ -36,6 +42,7 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin = findViewById(R.id.btnLogin);
         tvSignup = findViewById(R.id.tvSignup);
         ivAnimatedCar = findViewById(R.id.ivAnimatedCar);
+        progressBar = findViewById(R.id.progressBar);
 
         Animation carAnim = AnimationUtils.loadAnimation(this, R.anim.car_animation);
         if (ivAnimatedCar != null) {
@@ -58,16 +65,41 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
+        // Admin hardcoded check
+        if (email.equals("admin@gmail.com") && password.equals("admin123")) {
+            startActivity(new Intent(LoginActivity.this, AdminMainActivity.class));
+            finish();
+            return;
+        }
+
+        btnLogin.setEnabled(false);
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    btnLogin.setEnabled(true);
+
                     if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null && !user.isEmailVerified()) {
+                            // Optional: Toast.makeText(this, "Please verify your email address.", Toast.LENGTH_LONG).show();
+                        }
+
                         startActivity(new Intent(LoginActivity.this, MainActivity.class));
                         finish();
                     } else {
-                        String message = "Login failed: " + task.getException().getMessage();
+                        String message = "Login failed: ";
+                        Exception e = task.getException();
                         
-                        if (task.getException() instanceof FirebaseNetworkException) {
-                            message = "Network error. Please check your internet connection and try again.";
+                        if (e instanceof FirebaseAuthInvalidUserException) {
+                            message += "Account does not exist.";
+                        } else if (e instanceof FirebaseAuthInvalidCredentialsException) {
+                            message += "Invalid password.";
+                        } else if (e instanceof FirebaseNetworkException) {
+                            message = "Network error. Please check your internet connection.";
+                        } else {
+                            message += e != null ? e.getLocalizedMessage() : "Unknown error";
                         }
                         
                         Toast.makeText(LoginActivity.this, message, Toast.LENGTH_LONG).show();

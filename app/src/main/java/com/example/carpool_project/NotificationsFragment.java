@@ -98,6 +98,8 @@ public class NotificationsFragment extends Fragment {
         adapter.notifyItemRemoved(position);
         updateUIState();
 
+        if (notification.id == null) return;
+
         db.collection("notifications").document(notification.id).delete()
                 .addOnFailureListener(e -> {
                     if (isAdded()) {
@@ -120,7 +122,7 @@ public class NotificationsFragment extends Fragment {
                     if (!isAdded() || getContext() == null || isOptimisticClearing) return;
                     
                     if (error != null) {
-                        Log.e("Notifications", "Listen failed, attempting fallback", error);
+                        Log.w("Notifications", "Index might be missing, using client-side sort: " + error.getMessage());
                         loadWithoutSorting(uid);
                         return;
                     }
@@ -129,7 +131,10 @@ public class NotificationsFragment extends Fragment {
                         notificationList.clear();
                         for (DocumentSnapshot doc : value.getDocuments()) {
                             Notification n = doc.toObject(Notification.class);
-                            if (n != null) notificationList.add(n);
+                            if (n != null) {
+                                n.id = doc.getId(); // Ensure ID is set
+                                notificationList.add(n);
+                            }
                         }
                         adapter.notifyDataSetChanged();
                         updateUIState();
@@ -142,11 +147,19 @@ public class NotificationsFragment extends Fragment {
         notificationListener = db.collection("notifications")
                 .whereEqualTo("recipientId", uid)
                 .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.e("Notifications", "Fallback failed", error);
+                        return;
+                    }
                     if (!isAdded() || value == null || isOptimisticClearing) return;
+                    
                     notificationList.clear();
                     for (DocumentSnapshot doc : value.getDocuments()) {
                         Notification n = doc.toObject(Notification.class);
-                        if (n != null) notificationList.add(n);
+                        if (n != null) {
+                            n.id = doc.getId(); // Ensure ID is set
+                            notificationList.add(n);
+                        }
                     }
                     notificationList.sort((a, b) -> Long.compare(b.timestamp, a.timestamp));
                     adapter.notifyDataSetChanged();
@@ -184,7 +197,7 @@ public class NotificationsFragment extends Fragment {
         
         final List<String> idsToDelete = new ArrayList<>();
         for (Notification n : notificationList) {
-            idsToDelete.add(n.id);
+            if (n.id != null) idsToDelete.add(n.id);
         }
 
         notificationList.clear();

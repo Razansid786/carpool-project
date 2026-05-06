@@ -40,6 +40,7 @@ public class ChatActivity extends AppCompatActivity {
     private List<ChatMessage> messageList;
     private ChatAdapter adapter;
     private String currentUserId;
+    private boolean isAdmin = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,18 +49,35 @@ public class ChatActivity extends AppCompatActivity {
 
         rideId = getIntent().getStringExtra("rideId");
         otherUserId = getIntent().getStringExtra("otherUserId");
+        isAdmin = getIntent().getBooleanExtra("isAdmin", false);
         currentUserId = FirebaseAuth.getInstance().getUid();
 
-        if (rideId == null || otherUserId == null || currentUserId == null) {
-            Toast.makeText(this, "Error initializing chat", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+        if (rideId == null || otherUserId == null || (currentUserId == null && !isAdmin)) {
+            // Special case for admin who might not be logged in via Firebase Auth if hardcoded, 
+            // but for simplicity, let's assume they are or we use "admin" as uid
+            if (isAdmin) {
+                currentUserId = "admin";
+            } else {
+                Toast.makeText(this, "Error initializing chat", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
         }
 
-        if (currentUserId.compareTo(otherUserId) < 0) {
-            chatRoomId = currentUserId + "_" + otherUserId;
+        if ("support".equals(rideId)) {
+            if (isAdmin) {
+                chatRoomId = otherUserId; // otherUserId is the user's UID
+            } else {
+                chatRoomId = currentUserId; // currentUserId is the user's UID
+            }
+            chatRef = FirebaseDatabase.getInstance().getReference("support_chats").child(chatRoomId);
         } else {
-            chatRoomId = otherUserId + "_" + currentUserId;
+            if (currentUserId.compareTo(otherUserId) < 0) {
+                chatRoomId = currentUserId + "_" + otherUserId;
+            } else {
+                chatRoomId = otherUserId + "_" + currentUserId;
+            }
+            chatRef = FirebaseDatabase.getInstance().getReference("chats").child(rideId).child(chatRoomId);
         }
 
         rvChat = findViewById(R.id.rvChat);
@@ -72,10 +90,17 @@ public class ChatActivity extends AppCompatActivity {
 
         messageList = new ArrayList<>();
         adapter = new ChatAdapter(messageList, currentUserId);
-        rvChat.setLayoutManager(new LinearLayoutManager(this));
+        
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setStackFromEnd(true); 
+        rvChat.setLayoutManager(layoutManager);
         rvChat.setAdapter(adapter);
 
-        chatRef = FirebaseDatabase.getInstance().getReference("chats").child(rideId).child(chatRoomId);
+        rvChat.addOnLayoutChangeListener((v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) -> {
+            if (bottom < oldBottom && adapter.getItemCount() > 0) {
+                rvChat.postDelayed(() -> rvChat.smoothScrollToPosition(adapter.getItemCount() - 1), 100);
+            }
+        });
 
         loadOtherUserInfo();
         loadMessages();
@@ -92,6 +117,11 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void loadOtherUserInfo() {
+        if ("admin".equals(otherUserId)) {
+            tvChatWith.setText("Admin Support");
+            return;
+        }
+
         FirebaseFirestore.getInstance().collection("users").document(otherUserId)
                 .get()
                 .addOnSuccessListener(documentSnapshot -> {

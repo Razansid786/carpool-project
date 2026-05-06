@@ -14,7 +14,8 @@ public class BookingOffer implements Serializable {
     public String pickupAddress, dropoffAddress;
     public double offeredPrice;
     public int seatsRequested;
-    public String status;
+    public String status; // pending, accepted, rejected
+    public String rideFlowStatus; // starting, ongoing, completed
     public long timestamp;
 
     public BookingOffer() {}
@@ -38,6 +39,7 @@ public class BookingOffer implements Serializable {
         this.offeredPrice = offeredPrice;
         this.seatsRequested = seatsRequested;
         this.status = status;
+        this.rideFlowStatus = "idle";
         this.timestamp = timestamp;
     }
 }

@@ -44,12 +44,14 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +87,6 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
     @NonNull
     @Override
     public RideViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Basic initialization
         MapsInitializer.initialize(parent.getContext().getApplicationContext());
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_ride_card, parent, false);
         return new RideViewHolder(view);
@@ -134,8 +135,10 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
             if (ride.startLat != 0) {
                 holder.cardRideMap.setVisibility(View.VISIBLE);
                 holder.rideMapView.getMapAsync(googleMap -> {
-                    setupMapControls(googleMap, holder);
-                    loadRideOffers(ride, holder, googleMap);
+                    if (googleMap != null) {
+                        setupMapControls(googleMap, holder);
+                        loadRideOffers(ride, holder, googleMap);
+                    }
                 });
             } else {
                 holder.cardRideMap.setVisibility(View.GONE);
@@ -159,8 +162,10 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
             if (ride.startLat != 0 && ride.endLat != 0) {
                 holder.cardRideMap.setVisibility(View.VISIBLE);
                 holder.rideMapView.getMapAsync(googleMap -> {
-                    setupRideMap(googleMap, ride, new ArrayList<>(), holder.itemView.getContext(), false);
-                    setupMapControls(googleMap, holder);
+                    if (googleMap != null) {
+                        setupRideMap(googleMap, ride, new ArrayList<>(), holder.itemView.getContext(), false);
+                        setupMapControls(googleMap, holder);
+                    }
                 });
             } else {
                 holder.cardRideMap.setVisibility(View.GONE);
@@ -274,12 +279,14 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                         if (ride.startLat != 0) {
                             holder.cardRideMap.setVisibility(View.VISIBLE);
                             holder.rideMapView.getMapAsync(googleMap -> {
-                                List<BookingOffer> myAcceptedOffer = new ArrayList<>();
-                                if ("accepted".equals(status)) {
-                                    myAcceptedOffer.add(myOffer);
+                                if (googleMap != null) {
+                                    List<BookingOffer> myAcceptedOffer = new ArrayList<>();
+                                    if ("accepted".equals(status)) {
+                                        myAcceptedOffer.add(myOffer);
+                                    }
+                                    setupRideMap(googleMap, ride, myAcceptedOffer, holder.itemView.getContext(), true);
+                                    setupMapControls(googleMap, holder);
                                 }
-                                setupRideMap(googleMap, ride, myAcceptedOffer, holder.itemView.getContext(), true);
-                                setupMapControls(googleMap, holder);
                             });
                             
                             holder.btnOpenInMaps.setOnClickListener(v -> {
@@ -295,13 +302,36 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                             holder.layoutPendingStatus.setVisibility(View.VISIBLE);
                             holder.layoutConfirmedStatus.setVisibility(View.GONE);
                             holder.btnRideAction.setVisibility(View.GONE);
+                            holder.layoutSafetyFeatures.setVisibility(View.GONE);
                         } else if ("accepted".equals(status)) {
                             holder.layoutPendingStatus.setVisibility(View.GONE);
                             holder.layoutConfirmedStatus.setVisibility(View.VISIBLE);
-                            
+                            holder.layoutSafetyFeatures.setVisibility(View.VISIBLE);
+
+                            if (holder.btnChatDriver != null) {
+                                holder.btnChatDriver.setOnClickListener(v -> {
+                                    Intent intent = new Intent(v.getContext(), ChatActivity.class);
+                                    intent.putExtra("rideId", ride.rideId);
+                                    intent.putExtra("otherUserId", ride.driverId);
+                                    v.getContext().startActivity(intent);
+                                });
+                            }
+
+                            if (holder.btnComplaint != null) {
+                                holder.btnComplaint.setOnClickListener(v -> openComplaintChat(v.getContext(), ride));
+                            }
+
                             if ("ongoing".equals(rideFlowStatus)) {
-                                holder.layoutSafetyFeatures.setVisibility(View.VISIBLE);
-                                holder.btnRideAction.setVisibility(View.GONE);
+                                holder.btnCallPolice.setVisibility(View.VISIBLE);
+                                holder.btnShareRide.setVisibility(View.VISIBLE);
+                                holder.btnComplaint.setVisibility(View.VISIBLE);
+                                holder.btnRideAction.setVisibility(View.VISIBLE);
+                                holder.btnRideAction.setText("End Ride");
+                                holder.btnRideAction.setEnabled(true);
+                                holder.btnRideAction.setOnClickListener(v -> {
+                                    doc.getReference().update("rideFlowStatus", "completed");
+                                    sendNotification(ride.driverId, "Ride Completed", "Passenger has ended the ride.");
+                                });
 
                                 holder.btnCallPolice.setOnClickListener(v -> {
                                     Intent intent = new Intent(Intent.ACTION_DIAL);
@@ -312,11 +342,15 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                             } else if ("completed".equals(rideFlowStatus)) {
                                 holder.layoutSafetyFeatures.setVisibility(View.GONE);
                                 holder.btnRideAction.setVisibility(View.VISIBLE);
-                                holder.btnRideAction.setText("Ride Completed");
+                                holder.btnRideAction.setText("Ride Finished");
                                 holder.btnRideAction.setEnabled(false);
                             } else {
+                                holder.btnCallPolice.setVisibility(View.GONE);
+                                holder.btnShareRide.setVisibility(View.GONE);
+                                holder.btnComplaint.setVisibility(View.GONE);
                                 holder.btnRideAction.setVisibility(View.VISIBLE);
-                                holder.btnRideAction.setText("Confirm Start Ride");
+                                holder.btnRideAction.setText("Confirm Start");
+                                holder.btnRideAction.setEnabled(true);
                                 holder.btnRideAction.setOnClickListener(v -> {
                                     doc.getReference().update("rideFlowStatus", "ongoing");
                                     sendNotification(ride.driverId, "Ride Started", "Passenger has confirmed the ride start.");
@@ -327,9 +361,30 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                         holder.layoutPendingStatus.setVisibility(View.GONE);
                         holder.layoutConfirmedStatus.setVisibility(View.GONE);
                         holder.cardRideMap.setVisibility(View.GONE);
+                        holder.layoutSafetyFeatures.setVisibility(View.GONE);
                     }
                 });
         activeListeners.put(holder.hashCode(), lr);
+    }
+
+    private void openComplaintChat(Context context, Ride ride) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+
+        String complaintMsg = "Automated Complaint Report:\n" +
+                "Ride ID: " + ride.rideId + "\n" +
+                "Route: " + ride.origin + " to " + ride.destination + "\n" +
+                "Driver: " + ride.driverName + "\n" +
+                "Driver Email: " + ride.driverEmail + "\n" +
+                "Driver Phone: " + ride.driverPhone;
+
+        ChatMessage msg = new ChatMessage(uid, complaintMsg, System.currentTimeMillis());
+        FirebaseDatabase.getInstance().getReference("support_chats").child(uid).push().setValue(msg);
+
+        Intent intent = new Intent(context, ChatActivity.class);
+        intent.putExtra("rideId", "support");
+        intent.putExtra("otherUserId", "admin");
+        context.startActivity(intent);
     }
 
     private void shareLiveLocation(Context context, Ride ride) {
@@ -362,82 +417,91 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                             }
                         }
                     }
+
+                    // Sort offers: completed at the bottom
+                    Collections.sort(offers, (o1, o2) -> {
+                        int s1 = "completed".equals(o1.rideFlowStatus) ? 1 : 0;
+                        int s2 = "completed".equals(o2.rideFlowStatus) ? 1 : 0;
+                        return Integer.compare(s1, s2);
+                    });
                     
                     OfferAdapter adapter = new OfferAdapter(offers, ride);
                     holder.rvUsers.setLayoutManager(new LinearLayoutManager(holder.rvUsers.getContext()));
                     holder.rvUsers.setAdapter(adapter);
 
-                    setupRideMap(googleMap, ride, acceptedOffers, holder.itemView.getContext(), false);
+                    if (googleMap != null) {
+                        setupRideMap(googleMap, ride, acceptedOffers, holder.itemView.getContext(), false);
+                    }
                 });
         activeListeners.put(holder.hashCode(), lr);
     }
 
     private void setupRideMap(GoogleMap googleMap, Ride ride, List<BookingOffer> acceptedOffers, Context context, boolean isPassengerView) {
         if (googleMap == null) return;
-        googleMap.clear();
-        googleMap.getUiSettings().setZoomControlsEnabled(false); 
-        googleMap.getUiSettings().setAllGesturesEnabled(true);
-        googleMap.getUiSettings().setMapToolbarEnabled(true);
-        googleMap.getUiSettings().setCompassEnabled(true);
-        
-        LatLng start = new LatLng(ride.startLat, ride.startLng);
-        LatLng end = new LatLng(ride.endLat, ride.endLng);
-        
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        int pointsCount = 0;
+        try {
+            googleMap.clear();
+            googleMap.getUiSettings().setZoomControlsEnabled(false); 
+            googleMap.getUiSettings().setAllGesturesEnabled(true);
+            googleMap.getUiSettings().setMapToolbarEnabled(true);
+            googleMap.getUiSettings().setCompassEnabled(true);
+            
+            LatLng start = new LatLng(ride.startLat, ride.startLng);
+            LatLng end = new LatLng(ride.endLat, ride.endLng);
+            
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            int pointsCount = 0;
 
-        if (ride.startLat != 0 && ride.startLng != 0) {
-            googleMap.addMarker(new MarkerOptions().position(start).title("Start: " + ride.origin).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
-            builder.include(start);
-            pointsCount++;
-        }
-        if (ride.endLat != 0 && ride.endLng != 0) {
-            googleMap.addMarker(new MarkerOptions().position(end).title("End: " + ride.destination).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
-            builder.include(end);
-            pointsCount++;
-        }
-        
-        if (ride.currentLat != 0 && ride.currentLng != 0) {
-            LatLng current = new LatLng(ride.currentLat, ride.currentLng);
-            googleMap.addMarker(new MarkerOptions()
-                .position(current)
-                .title(isPassengerView ? "Driver Live" : "My Location")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car))); 
-            builder.include(current);
-            pointsCount++;
-        }
-
-        PolylineOptions routeLines = new PolylineOptions().color(Color.BLUE).width(8).geodesic(true);
-        if (ride.startLat != 0) routeLines.add(start);
-
-        for (BookingOffer offer : acceptedOffers) {
-            if (offer.pickupLat != 0) {
-                LatLng p = new LatLng(offer.pickupLat, offer.pickupLng);
-                googleMap.addMarker(new MarkerOptions().position(p).title(offer.passengerName + " (Pickup)")
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
-                builder.include(p);
-                routeLines.add(p);
+            if (ride.startLat != 0 && ride.startLng != 0) {
+                googleMap.addMarker(new MarkerOptions().position(start).title("Start: " + ride.origin).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                builder.include(start);
                 pointsCount++;
             }
-        }
-        
-        if (ride.endLat != 0) routeLines.add(end);
-        if (pointsCount >= 2) {
-            googleMap.addPolyline(routeLines);
-        } else if (ride.startLat != 0 && ride.endLat != 0) {
-            googleMap.addPolyline(new PolylineOptions().add(start, end).color(0x7FFF0000).width(5));
-        }
+            if (ride.endLat != 0 && ride.endLng != 0) {
+                googleMap.addMarker(new MarkerOptions().position(end).title("End: " + ride.destination).icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                builder.include(end);
+                pointsCount++;
+            }
+            
+            if (ride.currentLat != 0 && ride.currentLng != 0) {
+                LatLng current = new LatLng(ride.currentLat, ride.currentLng);
+                googleMap.addMarker(new MarkerOptions()
+                    .position(current)
+                    .title(isPassengerView ? "Driver Live" : "My Location")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.ic_car))); 
+                builder.include(current);
+                pointsCount++;
+            }
 
-        if (pointsCount > 0) {
-            try {
+            PolylineOptions routeLines = new PolylineOptions().color(Color.BLUE).width(8).geodesic(true);
+            if (ride.startLat != 0) routeLines.add(start);
+
+            for (BookingOffer offer : acceptedOffers) {
+                if (offer.pickupLat != 0) {
+                    LatLng p = new LatLng(offer.pickupLat, offer.pickupLng);
+                    googleMap.addMarker(new MarkerOptions().position(p).title(offer.passengerName + " (Pickup)")
+                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                    builder.include(p);
+                    routeLines.add(p);
+                    pointsCount++;
+                }
+            }
+            
+            if (ride.endLat != 0) routeLines.add(end);
+            if (pointsCount >= 2) {
+                googleMap.addPolyline(routeLines);
+            } else if (ride.startLat != 0 && ride.endLat != 0) {
+                googleMap.addPolyline(new PolylineOptions().add(start, end).color(0x7FFF0000).width(5));
+            }
+
+            if (pointsCount > 0) {
                 if (pointsCount == 1) {
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(builder.build().getCenter(), 14));
                 } else {
                     googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 100));
                 }
-            } catch (Exception e) {
-                if (ride.startLat != 0) googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(start, 12));
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -463,7 +527,7 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
         ImageView ivDriver, ivBottomCar;
         ImageButton btnDelete, btnOpenInMaps, btnZoomIn, btnZoomOut;
         LinearLayout layoutUsers, layoutPendingStatus, layoutConfirmedStatus, layoutSafetyFeatures;
-        Button btnRideAction, btnCallPolice, btnShareRide;
+        Button btnRideAction, btnCallPolice, btnShareRide, btnChatDriver, btnComplaint;
         RecyclerView rvUsers;
         MapView rideMapView;
         View cardRideMap;
@@ -491,6 +555,8 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
             btnRideAction = itemView.findViewById(R.id.btnRideAction);
             btnCallPolice = itemView.findViewById(R.id.btnCallPolice);
             btnShareRide = itemView.findViewById(R.id.btnShareRide);
+            btnChatDriver = itemView.findViewById(R.id.btnChatDriver);
+            btnComplaint = itemView.findViewById(R.id.btnComplaint);
             rvUsers = itemView.findViewById(R.id.rvUsers);
             rideMapView = itemView.findViewById(R.id.rideMapView);
             cardRideMap = itemView.findViewById(R.id.cardRideMap);
@@ -558,8 +624,12 @@ public class RideAdapter extends RecyclerView.Adapter<RideAdapter.RideViewHolder
                             String flowStatus = snapshot.getString("rideFlowStatus");
                             if ("ongoing".equals(flowStatus)) {
                                 holder.btnRideAction.setText("End Ride");
+                                holder.btnRideAction.setEnabled(true);
                             } else if ("starting".equals(flowStatus)) {
-                                holder.btnRideAction.setText("Waiting for Passenger...");
+                                holder.btnRideAction.setText("Waiting...");
+                                holder.btnRideAction.setEnabled(false);
+                            } else if ("completed".equals(flowStatus)) {
+                                holder.btnRideAction.setText("Ride Finished");
                                 holder.btnRideAction.setEnabled(false);
                             } else {
                                 holder.btnRideAction.setText("Start Ride");

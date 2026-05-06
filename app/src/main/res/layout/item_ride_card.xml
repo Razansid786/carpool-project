@@ -331,38 +331,57 @@
             </RelativeLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Ongoing Ride Controls (Safety) -->
         <LinearLayout
             android:id="@+id/layoutSafetyFeatures"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_marginTop="12dp"
             android:visibility="gone">
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnCallPolice"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Emergency"
-                android:textColor="@color/secondary_vibrant"
-                app:strokeColor="@color/secondary_vibrant"
-                app:icon="@android:drawable/ic_menu_call"
-                app:iconTint="@color/secondary_vibrant" />
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCallPolice"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Emergency"
+                    android:textColor="@color/secondary_vibrant"
+                    app:strokeColor="@color/secondary_vibrant"
+                    app:icon="@android:drawable/ic_menu_call"
+                    app:iconTint="@color/secondary_vibrant" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnShareRide"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="Share"
+                    android:textColor="@color/primary_vibrant"
+                    app:strokeColor="@color/primary_vibrant"
+                    app:icon="@android:drawable/ic_menu_share"
+                    app:iconTint="@color/primary_vibrant" />
+            </LinearLayout>
 
             <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnShareRide"
+                android:id="@+id/btnComplaint"
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="Share"
-                android:textColor="@color/primary_vibrant"
-                app:strokeColor="@color/primary_vibrant"
-                app:icon="@android:drawable/ic_menu_share"
-                app:iconTint="@color/primary_vibrant" />
+                android:layout_marginTop="8dp"
+                android:text="Complaint"
+                android:textColor="#FF9800"
+                app:strokeColor="#FF9800"
+                app:icon="@android:drawable/ic_dialog_info"
+                app:iconTint="#FF9800" />
         </LinearLayout>
 
         <com.google.android.material.button.MaterialButton

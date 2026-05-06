@@ -152,6 +152,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
         if (mAuth.getCurrentUser() == null) return;
         String userId = mAuth.getCurrentUser().getUid();
         db.collection("users").document(userId).get().addOnSuccessListener(doc -> {
+            if (!isAdded()) return;
             if (doc.exists()) {
                 workplaceAddress = doc.getString("workplaceAddress");
                 if (workplaceAddress == null) workplaceAddress = doc.getString("workplace");
@@ -218,6 +219,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void ensureMapInitialized() {
+        if (!isAdded()) return;
         if (!isMapInitialized) {
             SupportMapFragment mapFragment = (SupportMapFragment) getChildFragmentManager()
                     .findFragmentById(R.id.map);
@@ -266,6 +268,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
                 List<Address> addresses = coder.getFromLocationName(biasedQuery.toString(), 15);
                 if (getActivity() != null) {
                     getActivity().runOnUiThread(() -> {
+                        if (!isAdded()) return;
                         if (addresses != null && !addresses.isEmpty()) {
                             sortAndShowSuggestions(addresses, isFrom, query);
                         } else {
@@ -280,6 +283,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
     }
 
     private void sortAndShowSuggestions(List<Address> addresses, boolean isFrom, String query) {
+        if (getContext() == null) return;
         rvSuggestions.setVisibility(View.VISIBLE);
         rvSuggestions.setLayoutManager(new LinearLayoutManager(getContext()));
         rvSuggestions.setAdapter(new SuggestionAdapter(addresses, address -> {
@@ -327,6 +331,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
             String address = getAddressFromLocation(latLng);
             if (getActivity() != null) {
                 getActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
                     isSelfChange = true;
                     editText.setText(address);
                     isSelfChange = false;
@@ -419,6 +424,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
         String driverId = mAuth.getCurrentUser().getUid();
 
         db.collection("users").document(driverId).get().addOnSuccessListener(doc -> {
+            if (!isAdded()) return;
             if (doc.exists()) {
                 String name = doc.getString("name");
                 String email = doc.getString("email");
@@ -431,6 +437,7 @@ public class PostRideFragment extends Fragment implements OnMapReadyCallback {
 
                 db.collection("rides").document(rideId).set(ride)
                         .addOnSuccessListener(aVoid -> {
+                            if (!isAdded()) return;
                             Toast.makeText(getContext(), "Ride Posted!", Toast.LENGTH_SHORT).show();
                             if (getActivity() != null) {
                                 getActivity().getSupportFragmentManager().beginTransaction()
