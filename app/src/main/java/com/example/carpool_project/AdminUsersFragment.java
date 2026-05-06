@@ -15,6 +15,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -27,12 +28,15 @@ public class AdminUsersFragment extends Fragment {
     private AdminUserAdapter adapter;
     private List<Person> userList;
     private FirebaseFirestore db;
+    private String currentAdminId;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_admin_users, container, false);
         db = FirebaseFirestore.getInstance();
+        currentAdminId = FirebaseAuth.getInstance().getUid();
+        
         rvUsers = view.findViewById(R.id.rvAdminUsers);
         rvUsers.setLayoutManager(new LinearLayoutManager(getContext()));
         userList = new ArrayList<>();
@@ -77,21 +81,28 @@ public class AdminUsersFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
             Person p = list.get(position);
-            holder.tvName.setText(p.name);
-            holder.tvEmail.setText(p.email);
-            holder.tvRole.setText("Role: " + p.role);
+            holder.tvName.setText(p.name != null ? p.name : "No Name");
+            holder.tvEmail.setText(p.email != null ? p.email : "No Email");
+            holder.tvRole.setText("Role: " + (p.role != null ? p.role : "User"));
 
-            holder.btnDelete.setOnClickListener(v -> {
-                new AlertDialog.Builder(requireContext())
-                        .setTitle("Delete User")
-                        .setMessage("Are you sure you want to delete " + p.name + "?")
-                        .setPositiveButton("Delete", (dialog, which) -> {
-                            db.collection("users").document(p.userId).delete()
-                                    .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), "User deleted", Toast.LENGTH_SHORT).show());
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
-            });
+            // Prevent admin from deleting themselves
+            if (p.userId != null && p.userId.equals(currentAdminId)) {
+                holder.btnDelete.setVisibility(View.GONE);
+            } else {
+                holder.btnDelete.setVisibility(View.VISIBLE);
+                holder.btnDelete.setOnClickListener(v -> {
+                    new AlertDialog.Builder(requireContext())
+                            .setTitle("Delete User")
+                            .setMessage("Are you sure you want to delete " + p.name + "? This action cannot be undone.")
+                            .setPositiveButton("Delete", (dialog, which) -> {
+                                db.collection("users").document(p.userId).delete()
+                                        .addOnSuccessListener(aVoid -> Toast.makeText(getContext(), "User deleted successfully", Toast.LENGTH_SHORT).show())
+                                        .addOnFailureListener(e -> Toast.makeText(getContext(), "Failed to delete user", Toast.LENGTH_SHORT).show());
+                            })
+                            .setNegativeButton("Cancel", null)
+                            .show();
+                });
+            }
         }
 
         @Override
