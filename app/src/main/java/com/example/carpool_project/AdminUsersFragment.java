@@ -1,6 +1,7 @@
 package com.example.carpool_project;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +30,7 @@ public class AdminUsersFragment extends Fragment {
     private List<Person> userList;
     private FirebaseFirestore db;
     private String currentAdminId;
+    private boolean isHardcodedAdmin = false;
 
     @Nullable
     @Override
@@ -36,6 +38,10 @@ public class AdminUsersFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_admin_users, container, false);
         db = FirebaseFirestore.getInstance();
         currentAdminId = FirebaseAuth.getInstance().getUid();
+        
+        if (getArguments() != null) {
+            isHardcodedAdmin = getArguments().getBoolean("isHardcodedAdmin", false);
+        }
         
         rvUsers = view.findViewById(R.id.rvAdminUsers);
         rvUsers.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -49,7 +55,11 @@ public class AdminUsersFragment extends Fragment {
 
     private void loadUsers() {
         db.collection("users").addSnapshotListener((value, error) -> {
-            if (error != null) return;
+            if (error != null) {
+                Log.e("AdminUsers", "Error loading users", error);
+                if (isAdded()) Toast.makeText(getContext(), "Error loading users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                return;
+            }
             if (value != null) {
                 userList.clear();
                 for (DocumentSnapshot doc : value.getDocuments()) {
@@ -85,8 +95,11 @@ public class AdminUsersFragment extends Fragment {
             holder.tvEmail.setText(p.email != null ? p.email : "No Email");
             holder.tvRole.setText("Role: " + (p.role != null ? p.role : "User"));
 
-            // Prevent admin from deleting themselves
-            if (p.userId != null && p.userId.equals(currentAdminId)) {
+            // Prevent admin from deleting themselves (if they have a UID) or the hardcoded admin email
+            boolean isSelf = (currentAdminId != null && currentAdminId.equals(p.userId)) 
+                            || (p.email != null && p.email.equals("admin@gmail.com"));
+
+            if (isSelf) {
                 holder.btnDelete.setVisibility(View.GONE);
             } else {
                 holder.btnDelete.setVisibility(View.VISIBLE);

@@ -10,15 +10,18 @@ import com.google.firebase.auth.FirebaseAuth;
 
 public class AdminMainActivity extends AppCompatActivity {
 
+    private boolean isHardcodedAdmin = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_main);
 
+        isHardcodedAdmin = getIntent().getBooleanExtra("isHardcodedAdmin", false);
+
         MaterialToolbar toolbar = findViewById(R.id.adminToolbar);
         TabLayout tabLayout = findViewById(R.id.adminTabLayout);
         
-        // Use the navigation icon (power off) for logout
         toolbar.setNavigationOnClickListener(v -> {
             FirebaseAuth.getInstance().signOut();
             Intent intent = new Intent(AdminMainActivity.this, LoginActivity.class);
@@ -46,7 +49,16 @@ public class AdminMainActivity extends AppCompatActivity {
         });
     }
 
+    public boolean isHardcodedAdmin() {
+        return isHardcodedAdmin;
+    }
+
     private void loadFragment(Fragment fragment) {
+        // Pass the admin flag to the fragment via Arguments
+        Bundle args = new Bundle();
+        args.putBoolean("isHardcodedAdmin", isHardcodedAdmin);
+        fragment.setArguments(args);
+
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.admin_fragment_container, fragment)
                 .commit();

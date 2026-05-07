@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,12 +35,22 @@ public class AdminChatsFragment extends Fragment {
     private List<SupportChatEntry> chatEntries;
     private DatabaseReference supportRef;
     private ValueEventListener supportListener;
+    private boolean isHardcodedAdmin = false;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_admin_chats, container, false);
+        return inflater.inflate(R.layout.fragment_admin_chats, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         
+        if (getArguments() != null) {
+            isHardcodedAdmin = getArguments().getBoolean("isHardcodedAdmin", false);
+        }
+
         rvChats = view.findViewById(R.id.rvAdminChats);
         chatEntries = new ArrayList<>();
         adapter = new ChatListAdapter(chatEntries);
@@ -48,30 +59,63 @@ public class AdminChatsFragment extends Fragment {
         rvChats.setAdapter(adapter);
         
         checkAdminAndLoad();
-        
-        return view;
     }
 
     private void checkAdminAndLoad() {
-        String uid = FirebaseAuth.getInstance().getUid();
-        if (uid == null) return;
+        // 1. Primary check: If we are in the AdminMainActivity dashboard, grant access.
+        if (isHardcodedAdmin || getActivity() instanceof AdminMainActivity) {
+            Log.d("AdminChats", "Access granted via Admin Dashboard context");
+            loadData();
+            return;
+        }
 
-        FirebaseFirestore.getInstance().collection("users").document(uid).get()
-                .addOnSuccessListener(doc -> {
-                    if (doc.exists() && "admin".equals(doc.getString("role"))) {
-                        supportRef = FirebaseDatabase.getInstance().getReference("support_chats");
-                        loadSupportChats();
-                    } else {
-                        Log.w("AdminChats", "Non-admin user tried to access admin chats");
-                        if (isAdded()) Toast.makeText(getContext(), "Access Denied", Toast.LENGTH_SHORT).show();
-                    }
-                })
-                .addOnFailureListener(e -> Log.e("AdminChats", "Failed to verify admin", e));
+        // 2. Fallback check for Firebase User
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            // Check hardcoded email
+            if ("admin@gmail.com".equals(user.getEmail())) {
+                loadData();
+                return;
+            }
+
+            // Check Firestore role as last resort
+            FirebaseFirestore.getInstance().collection("users").document(user.getUid()).get()
+                    .addOnSuccessListener(doc -> {
+                        if (isAdded()) {
+                            if (doc.exists() && "admin".equals(doc.getString("role"))) {
+                                loadData();
+                            } else {
+                                Log.w("AdminChats", "Unauthorized user email: " + user.getEmail());
+                                Toast.makeText(getContext(), "Access Denied: Admin role not found", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        if (isAdded()) {
+                            Log.e("AdminChats", "Firestore verification failed", e);
+                            Toast.makeText(getContext(), "Error verifying admin status", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            if (isAdded()) {
+                Log.w("AdminChats", "No user logged in and not in Admin context");
+                Toast.makeText(getContext(), "Access Denied: Please log in as admin", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private void loadData() {
+        supportRef = FirebaseDatabase.getInstance().getReference("support_chats");
+        loadSupportChats();
     }
 
     private void loadSupportChats() {
         if (supportRef == null) return;
         
+        if (supportListener != null) {
+            supportRef.removeEventListener(supportListener);
+        }
+
         supportListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -88,7 +132,11 @@ public class AdminChatsFragment extends Fragment {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("AdminChats", "Database error: " + error.getMessage());
+                Log.e("AdminChats", "Database Access Blocked: " + error.getMessage());
+                if (isAdded()) {
+                    // This error means Firebase Realtime Database Security Rules are rejecting the request.
+                    Toast.makeText(getContext(), "Permission Denied: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                }
             }
         };
         supportRef.addValueEventListener(supportListener);
@@ -105,7 +153,7 @@ public class AdminChatsFragment extends Fragment {
     private void fetchUserName(SupportChatEntry entry) {
         FirebaseFirestore.getInstance().collection("users").document(entry.userId)
                 .get().addOnSuccessListener(doc -> {
-                    if (doc.exists()) {
+                    if (doc.exists() && isAdded()) {
                         entry.userName = doc.getString("name");
                         adapter.notifyDataSetChanged();
                     }
@@ -117,6 +165,7 @@ public class AdminChatsFragment extends Fragment {
         lastMsgQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (!isAdded()) return;
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     ChatMessage msg = ds.getValue(ChatMessage.class);
                     if (msg != null) {

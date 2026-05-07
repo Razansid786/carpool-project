@@ -67,8 +67,20 @@ public class LoginActivity extends AppCompatActivity {
 
         // Admin hardcoded check
         if (email.equals("admin@gmail.com") && password.equals("admin123")) {
-            startActivity(new Intent(LoginActivity.this, AdminMainActivity.class));
-            finish();
+            if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
+            btnLogin.setEnabled(false);
+
+            // Attempt to sign in to Firebase so we have a valid session for database access
+            mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (progressBar != null) progressBar.setVisibility(View.GONE);
+                    btnLogin.setEnabled(true);
+                    
+                    Intent intent = new Intent(LoginActivity.this, AdminMainActivity.class);
+                    intent.putExtra("isHardcodedAdmin", true);
+                    startActivity(intent);
+                    finish();
+                });
             return;
         }
 
@@ -81,11 +93,6 @@ public class LoginActivity extends AppCompatActivity {
                     btnLogin.setEnabled(true);
 
                     if (task.isSuccessful()) {
-                        FirebaseUser user = mAuth.getCurrentUser();
-                        if (user != null && !user.isEmailVerified()) {
-                            // Optional: Toast.makeText(this, "Please verify your email address.", Toast.LENGTH_LONG).show();
-                        }
-
                         startActivity(new Intent(LoginActivity.this, MainActivity.class));
                         finish();
                     } else {

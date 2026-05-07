@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.carpool_project"
-    compileSdk = 35 // Changed from 36 to a stable SDK version
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.carpool_project"
