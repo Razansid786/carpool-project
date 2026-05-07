@@ -6,6 +6,14 @@
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.example.carpool_project" />
+                  <option name="mobileSdkAppId" value="1:1065038456555:android:514114ae87da5879edc0ae" />
+                  <option name="projectId" value="shared-ride-111f9" />
+                  <option name="projectNumber" value="1065038456555" />
+                </ConnectionSetting>
+              </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
               <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />
